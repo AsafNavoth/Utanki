@@ -5,8 +5,8 @@ import requests
 from requests.exceptions import HTTPError
 
 from anki_deck import build_anki_deck_from_lyrics_data
-from config import LRCLIB_BASE_URL
-from lyrics_tokenizer import JamdictNotAvailableError
+from config import LRCLIB_BASE_URL, MAX_LYRICS_CHARS
+from lyrics_tokenizer import JamdictNotAvailableError, extract_lyrics_text
 
 logger = logging.getLogger(__name__)
 lyrics_bp = Blueprint('lyrics', __name__)
@@ -45,6 +45,10 @@ def export_anki():
 
     track_name = lyrics_data.get('trackName', 'Unknown')
     logger.info("export_anki: building deck track=%r keys=%s", track_name, list(lyrics_data.keys()))
+    lyrics_text = extract_lyrics_text(lyrics_data)
+    if len(lyrics_text) > MAX_LYRICS_CHARS:
+        logger.warning("export_anki: lyrics too long chars=%d max=%d", len(lyrics_text), MAX_LYRICS_CHARS)
+        return jsonify({'error': f'Lyrics text is too long. Max {MAX_LYRICS_CHARS} characters.'}), 413
 
     try:
         apkg_bytes = build_anki_deck_from_lyrics_data(lyrics_data)
@@ -60,10 +64,8 @@ def export_anki():
         logger.exception("export_anki: ValueError track=%r", track_name)
         raise
 
-    filename = f'{track_name.replace("/", "-")}.apkg'
-
     return Response(
         apkg_bytes,
         mimetype='application/octet-stream',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+        headers={'Content-Disposition': 'attachment; filename="utanki.apkg"'},
     )

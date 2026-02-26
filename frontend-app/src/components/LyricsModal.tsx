@@ -5,11 +5,11 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Button,
 } from '@mui/material'
 import { useReactQuery } from '../hooks/useReactQuery'
 import { useAnkiExport } from '../hooks/useAnkiExport'
 import type { LrclibLyricsDetails } from '../types/lrclib'
+import { AnkiExportButton } from './AnkiExportButton'
 
 type LyricsModalProps = {
   open: boolean
@@ -35,7 +35,13 @@ export const LyricsModal = ({
   })
 
   const lyricsToShow = data?.plainLyrics ?? data?.syncedLyrics ?? ''
-  const { prepare, download, blob, isExporting, error: exportError } = useAnkiExport({
+  const {
+    prepare,
+    download,
+    blob,
+    isExporting,
+    error: exportError,
+  } = useAnkiExport({
     payload: data ?? null,
     filename: `${trackName}.apkg`,
   })
@@ -48,6 +54,18 @@ export const LyricsModal = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{dialogTitle || 'Lyrics'}</DialogTitle>
       <DialogContent>
+        {data && (
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <AnkiExportButton
+              hasPreparedFile={!!blob}
+              isExporting={isExporting}
+              disabled={!lyricsToShow}
+              error={exportError}
+              onPrepare={prepare}
+              onDownload={download}
+            />
+          </Box>
+        )}
         {isLoading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress size={32} />
@@ -72,23 +90,6 @@ export const LyricsModal = ({
           >
             {lyricsToShow}
           </Typography>
-        )}
-        {data && (
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={blob ? download : prepare}
-              disabled={!lyricsToShow || isExporting}
-              startIcon={isExporting ? <CircularProgress size={16} color="inherit" /> : undefined}
-            >
-              {isExporting ? 'Preparing…' : blob ? 'Download' : 'Export to Anki'}
-            </Button>
-            {exportError && (
-              <Typography color="error" sx={{ mt: 1, fontSize: '0.875rem' }}>
-                {exportError}
-              </Typography>
-            )}
-          </Box>
         )}
       </DialogContent>
     </Dialog>

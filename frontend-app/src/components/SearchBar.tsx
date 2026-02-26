@@ -7,7 +7,7 @@ type SearchBarProps = {
 }
 
 export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => (
-  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pt: 1 }}>
     <TextField
       label="Search songs"
       value={value}

@@ -111,19 +111,20 @@ def build_anki_deck(
     deck = genanki.Deck(DECK_ID, deck_name)
 
     no_definition = html.escape('No definition found')
-    has_any_definition = False
+    added_cards = 0
 
     for word, result in tokenized_lyrics:
         definition_html = _format_jamdict_result(result)
-        if definition_html != no_definition:
-            has_any_definition = True
+        if definition_html == no_definition:
+            continue
         note = genanki.Note(
             model=model,
             fields=[html.escape(word), definition_html],
         )
         deck.add_note(note)
+        added_cards += 1
 
-    if tokenized_lyrics and not has_any_definition:
+    if added_cards == 0:
         logger.warning("build_anki_deck: no definitions for any of %d words", len(tokenized_lyrics))
         raise ValueError('No definitions found for any word in the lyrics')
 

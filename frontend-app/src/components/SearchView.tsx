@@ -55,6 +55,8 @@ export const SearchView = () => {
         gap: 2,
         height: '100%',
         width: '50%',
+        minWidth: 0,
+        overflow: 'hidden',
       }}
     >
       <SearchBar

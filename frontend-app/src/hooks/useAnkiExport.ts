@@ -30,13 +30,13 @@ export const useAnkiExport = ({ payload, filename }: UseAnkiExportParams) => {
     } catch (err: unknown) {
       let message = err instanceof Error ? err.message : 'Export failed'
       if (err && typeof err === 'object' && 'response' in err) {
-        const res = (err as { response?: { data?: unknown } }).response
-        const data = res?.data
-        if (data instanceof Blob) {
+        const errorResponse = (err as { response?: { data?: unknown } }).response
+        const responseData = errorResponse?.data
+        if (responseData instanceof Blob) {
           try {
-            const text = await data.text()
-            const parsed = JSON.parse(text) as { error?: string }
-            if (parsed.error) message = parsed.error
+            const errorText = await responseData.text()
+            const parsedError = JSON.parse(errorText) as { error?: string }
+            if (parsedError.error) message = parsedError.error
           } catch {
             /* ignore */
           }
@@ -50,12 +50,12 @@ export const useAnkiExport = ({ payload, filename }: UseAnkiExportParams) => {
 
   const download = useCallback(() => {
     if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename.replace(/\//g, '-')
-    a.click()
-    URL.revokeObjectURL(url)
+    const objectUrl = URL.createObjectURL(blob)
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.href = objectUrl
+    downloadAnchor.download = filename.replace(/\//g, '-')
+    downloadAnchor.click()
+    URL.revokeObjectURL(objectUrl)
   }, [blob, filename])
 
   return { prepare, download, blob, isExporting, error }

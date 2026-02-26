@@ -50,7 +50,7 @@ def test_format_jamdict_result_returns_no_definition_found_for_empty():
 
 
 def test_build_anki_deck_has_at_least_one_definition():
-    """A deck built from tokenized data with at least one valid entry has a card with a definition."""
+    """Deck includes only cards that have definitions."""
     tokenized = [
         ('word1', {'entries': [], 'names': [], 'chars': []}),
         ('word2', {
@@ -66,6 +66,7 @@ def test_build_anki_deck_has_at_least_one_definition():
     apkg_bytes = build_anki_deck(tokenized)
     assert len(apkg_bytes) > 100
     assert b'sound' in apkg_bytes, 'Deck must contain at least one definition'
+    assert b'No definition found' not in apkg_bytes
 
 
 def test_build_anki_deck_raises_when_no_definitions_found():

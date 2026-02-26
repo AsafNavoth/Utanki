@@ -1,7 +1,7 @@
 import requests_mock
 from unittest.mock import patch
 
-from config import LRCLIB_BASE_URL
+from config import LRCLIB_BASE_URL, MAX_LYRICS_CHARS
 from lyrics_tokenizer import JamdictNotAvailableError, remove_english_letters, _should_keep_token
 
 
@@ -150,7 +150,8 @@ def test_export_anki_returns_apkg_file(mock_tokenize, client):
     assert response.status_code == 200
     assert response.content_type == 'application/octet-stream'
     assert 'attachment' in response.headers.get('Content-Disposition', '')
-    assert '桜.apkg' in response.headers.get('Content-Disposition', '')
+    header = response.headers.get('Content-Disposition', '')
+    assert 'filename="utanki.apkg"' in header
     assert len(response.data) > 100
 
 
@@ -161,6 +162,21 @@ def test_export_anki_returns_400_when_no_body(client):
         headers={'Content-Type': 'application/json'},
     )
     assert response.status_code in (400, 415)
+
+
+def test_export_anki_returns_413_when_text_too_long(client):
+    lyrics_data = {
+        'trackName': 'Test',
+        'artistName': 'Artist',
+        'plainLyrics': 'あ' * (MAX_LYRICS_CHARS + 1),
+    }
+    response = client.post(
+        '/api/lyrics/anki',
+        json=lyrics_data,
+        headers={'Content-Type': 'application/json'},
+    )
+    assert response.status_code == 413
+    assert f'Max {MAX_LYRICS_CHARS} characters' in response.get_json()['error']
 
 
 @patch('anki_deck.tokenize_lyrics', side_effect=JamdictNotAvailableError('Jamdict database is not available.'))
@@ -177,6 +193,23 @@ def test_export_anki_returns_503_when_jamdict_unavailable(mock_tokenize, client)
     )
     assert response.status_code == 503
     assert 'Jamdict' in response.get_json()['error']
+
+
+@patch('anki_deck.tokenize_lyrics', return_value=[('花', {'entries': [{'kanji': [{'text': '花'}], 'kana': [{'text': 'はな'}], 'senses': [{'SenseGloss': [{'text': 'flower', 'lang': 'eng'}]}]}], 'names': [], 'chars': []})])
+def test_export_anki_uses_static_filename(mock_tokenize, client):
+    lyrics_data = {
+        'trackName': 'bad"name\r\nx:/track',
+        'artistName': 'Artist',
+        'plainLyrics': '花',
+    }
+    response = client.post(
+        '/api/lyrics/anki',
+        json=lyrics_data,
+        headers={'Content-Type': 'application/json'},
+    )
+    assert response.status_code == 200
+    header = response.headers.get('Content-Disposition', '')
+    assert header == 'attachment; filename="utanki.apkg"'
 
 
 @patch('anki_deck.tokenize_lyrics', return_value=[])
