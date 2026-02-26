@@ -14,7 +14,10 @@ export const SearchResultsList = ({
   <List sx={{ maxHeight: '100%', overflow: 'auto' }}>
     {results.map((track) => (
       <ListItem key={track.id} divider disablePadding>
-        <ListItemButton onClick={() => onTrackClick(track)} sx={{...onHoverStyle}}>
+        <ListItemButton
+          onClick={() => onTrackClick(track)}
+          sx={{ ...onHoverStyle }}
+        >
           <ListItemText
             primary={track.trackName}
             secondary={`${track.artistName} • ${track.albumName}`}

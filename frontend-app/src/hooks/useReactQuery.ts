@@ -43,7 +43,10 @@ export const useReactQueryMutation = <TData = unknown, TVariables = unknown>(
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables) => {
       if (method === 'delete') {
-        const { data } = await api.delete<TData>(url, variables as AxiosRequestConfig)
+        const { data } = await api.delete<TData>(
+          url,
+          variables as AxiosRequestConfig
+        )
 
         return data
       }

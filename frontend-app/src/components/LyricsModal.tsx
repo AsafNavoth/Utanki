@@ -34,7 +34,9 @@ export const LyricsModal = ({
 
   const lyricsToShow = data?.plainLyrics ?? data?.syncedLyrics ?? ''
 
-  const dialogTitle = [trackName, artistName, albumName].filter(Boolean).join(' - ')
+  const dialogTitle = [trackName, artistName, albumName]
+    .filter(Boolean)
+    .join(' - ')
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

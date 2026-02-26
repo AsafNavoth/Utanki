@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 app = Flask(__name__)
 CORS(app)
@@ -23,15 +23,24 @@ def search():
     if not search_params.get('q') and not search_params.get('track_name'):
         return jsonify({'error': 'At least one of q or track_name is required'}), 400
 
-    lrclib_response = requests.get(
-        f'{LRCLIB_BASE_URL}/api/search',
-        params=search_params,
-        # headers={'User-Agent': 'Utanki/1.0 (https://github.com/utanki)'},
-        timeout=10,
-    )
+    try:
+        lrclib_response = requests.get(
+            f'{LRCLIB_BASE_URL}/api/search',
+            params=search_params,
+            # headers={'User-Agent': 'Utanki/1.0 (https://github.com/utanki)'},
+            timeout=10,
+        )
+        lrclib_response.raise_for_status()
 
-    lrclib_response.raise_for_status()
-    return jsonify(lrclib_response.json())
+        return jsonify(lrclib_response.json())
+
+    except HTTPError:
+
+        return jsonify(lrclib_response.json()), lrclib_response.status_code
+        
+    except RequestException as e:
+        
+        return jsonify({'error': 'Failed to reach lyrics service', 'detail': str(e)}), 502
 
 
 @app.route('/api/lyrics/<int:lyrics_id>')
