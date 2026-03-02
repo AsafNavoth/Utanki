@@ -3,11 +3,8 @@ import { type AxiosInstance } from 'axios'
 import { useSnackbar } from '../contexts/snackbar/snackbarContext'
 import { AnkiConnectContext } from '../contexts/ankiconnect/ankiconnectContext'
 import { pluralSuffix } from '../utils/commonStringUtils'
-import {
-  ANKI_CONNECTION_ERROR_MESSAGE,
-  isAnkiConnectionError,
-} from '../utils/commonStringUtils'
-import { getApiErrorMessage } from '../utils/apiUtils'
+import { ANKI_CONNECTION_ERROR_MESSAGE } from '../utils/commonStringUtils'
+import { getApiErrorMessage, isAnkiConnectionError } from '../utils/apiUtils'
 import { useApi } from './useApi'
 import type { AnkiNote } from './useAnkiNotes'
 
@@ -45,38 +42,24 @@ const invokeAnkiConnect = async <T>(
   api: AxiosInstance,
   request: AnkiConnectRequest
 ): Promise<T> => {
-  try {
-    const { data } = await api.post<{ result?: T; error?: string }>(
-      '/api/ankiconnect',
-      request
-    )
-    if (data.error) {
-      throw new Error(data.error)
-    }
-
-    return data.result as T
-  } catch (err: unknown) {
-    if (
-      err &&
-      typeof err === 'object' &&
-      'response' in err &&
-      err.response &&
-      typeof err.response === 'object' &&
-      'data' in err.response &&
-      err.response.data &&
-      typeof err.response.data === 'object' &&
-      'error' in err.response.data &&
-      typeof (err.response.data as { error: unknown }).error === 'string'
-    ) {
-      throw new Error((err.response.data as { error: string }).error)
-    }
-    throw err
+  const { data } = await api.post<{ result?: T; error?: string }>(
+    '/api/ankiconnect',
+    request
+  )
+  if (data.error) {
+    throw new Error(data.error)
   }
+  const result = data.result
+  if (result === undefined) {
+    throw new Error('Invalid AnkiConnect response')
+  }
+
+  return result
 }
 
 export const useAnkiConnect = () => {
   const api = useApi()
-  const { enqueueSnackbar } = useSnackbar()
+  const { enqueueSnackbar, enqueueErrorSnackbar } = useSnackbar()
   const ankiContext = useContext(AnkiConnectContext)
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -191,14 +174,14 @@ export const useAnkiConnect = () => {
           ? ANKI_CONNECTION_ERROR_MESSAGE
           : message
         setError(displayMessage)
-        enqueueSnackbar(displayMessage)
+        enqueueErrorSnackbar(displayMessage)
         if (isAnkiConnectionError(message)) ankiContext?.onConnectionError()
         throw err
       } finally {
         setIsAdding(false)
       }
     },
-    [api, enqueueSnackbar, ankiContext]
+    [api, enqueueSnackbar, enqueueErrorSnackbar, ankiContext]
   )
 
   const getDeckNames = useCallback(async (): Promise<string[]> => {

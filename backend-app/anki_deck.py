@@ -155,7 +155,7 @@ def _build_notes_from_tokenized(
         definition_html = _format_jamdict_result(result)
         if definition_html == no_definition:
             continue
-        notes.append((html.escape(word), html.escape(sentence), definition_html))
+        notes.append((html.escape(word), sentence, definition_html))
     return notes
 
 

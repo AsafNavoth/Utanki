@@ -32,5 +32,6 @@ def proxy():
     except requests.RequestException as e:
         logger.warning("ankiconnect proxy: %s", e)
         return jsonify(
-            error='Cannot connect to Anki. Make sure Anki is running and AnkiConnect is installed.'
+            error='Cannot connect to Anki. Make sure Anki is running and AnkiConnect is installed.',
+            errorCode='ANKI_CONNECTION',
         ), 503

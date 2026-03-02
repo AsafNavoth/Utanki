@@ -1,3 +1,4 @@
+import html
 import logging
 import re
 import unicodedata
@@ -105,11 +106,35 @@ def remove_english_letters(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
+MAX_SENTENCE_LEN = 100
+
+
+def _truncate_around_match(line: str, match: str) -> str:
+    """Return a substring of line centered on match, max MAX_SENTENCE_LEN chars."""
+    if len(line) <= MAX_SENTENCE_LEN:
+        return line
+
+    idx = line.find(match)
+    match_pos = max(0, idx)
+
+    start = max(0, min(match_pos - MAX_SENTENCE_LEN // 2, len(line) - MAX_SENTENCE_LEN))
+    end = start + MAX_SENTENCE_LEN
+
+    excerpt = line[start:end]
+
+    prefix = "…" if start > 0 else ""
+    suffix = "…" if end < len(line) else ""
+
+    return f"{prefix}{excerpt}{suffix}"
+
+
 def get_sentence_for_word(
     word: str, lyrics_text: str, surface_forms: list[str] | None = None
 ) -> str:
     """Return the first line/phrase from lyrics_text that contains the word.
-    Uses surface_forms for matching when provided (handles Japanese verb conjugation)."""
+    Uses surface_forms for matching when provided (handles Japanese verb conjugation).
+    If the line exceeds MAX_SENTENCE_LEN, returns a truncated substring centered on the word.
+    The matched word is wrapped in <b> tags for bold display in Anki."""
     if not lyrics_text:
         return ''
     # Prefer newline-separated lines; fall back to space-separated phrases (cleaned text)
@@ -126,7 +151,10 @@ def get_sentence_for_word(
     for line in lines:
         for c in candidates:
             if c and c in line:
-                return line
+                truncated = _truncate_around_match(line, c)
+                escaped = html.escape(truncated)
+                escaped_match = html.escape(c)
+                return escaped.replace(escaped_match, f'<b>{escaped_match}</b>', 1)
     return ''
 
 

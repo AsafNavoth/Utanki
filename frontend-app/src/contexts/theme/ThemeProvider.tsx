@@ -47,6 +47,12 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       createTheme({
         palette: {
           mode,
+          primary: { main: '#14b8a6' },
+          secondary: { main: '#38bdf8' },
+          background:
+            mode === 'light'
+              ? { default: '#eef2f6', paper: '#e2e8f0' }
+              : { default: '#131A20', paper: '#2F3B46' },
         },
       }),
     [mode]

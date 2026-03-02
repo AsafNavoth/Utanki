@@ -220,13 +220,23 @@ TEST_LYRICS = '''おかわりするわ 飲み終わるまでにきてね
 def test_get_sentence_for_word_finds_lines_with_surface_forms():
     """Sentence extraction finds lines using surface forms (handles conjugation)."""
     # 飲む has surface 飲み in "飲み終わるまでにきてね"
-    assert get_sentence_for_word('飲む', TEST_LYRICS, ['飲み']) == 'おかわりするわ 飲み終わるまでにきてね'
+    assert get_sentence_for_word('飲む', TEST_LYRICS, ['飲み']) == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
     # おかしい has surface おかしい in "私の何かがおかしいの"
-    assert get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい']) == '私の何かがおかしいの'
+    assert get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい']) == '私の何かが<b>おかしい</b>の'
     # 泳ぐ has surface 泳いで in "みんなが知らない海泳いで"
-    assert get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで']) == 'みんなが知らない海泳いで'
+    assert get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで']) == 'みんなが知らない海<b>泳いで</b>'
     # 光る has surface 光らない in "光らないな"
-    assert get_sentence_for_word('光る', TEST_LYRICS, ['光らない']) == '耳のそば 連絡ないまま 光らないな'
+    assert get_sentence_for_word('光る', TEST_LYRICS, ['光らない']) == '耳のそば 連絡ないまま <b>光らない</b>な'
+
+
+def test_get_sentence_for_word_truncates_long_paragraphs():
+    """Long paragraphs are truncated to a window around the word."""
+    long_para = 'あ' * 50 + '花' + 'い' * 50  # 101 chars, 花 at position 50
+    result = get_sentence_for_word('花', long_para)
+    assert '花' in result
+    assert '<b>花</b>' in result
+    assert len(result) <= 115  # 100 + ellipsis + <b></b> tags
+    assert result.startswith('…') or result.endswith('…')
 
 
 @patch('anki_deck.tokenize_lyrics')

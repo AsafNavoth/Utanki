@@ -7,7 +7,6 @@ import {
   Select,
   Switch,
 } from '@mui/material'
-import { DeckSelectSkeleton } from '../common/LoadingSkeletons'
 import { useAnkiConnectContext } from '../../contexts/ankiconnect/ankiconnectContext'
 import { onHoverStyle } from '../../utils/commonStyles'
 
@@ -20,6 +19,9 @@ export const AnkiConnectBar = () => {
     decks,
     refreshDecks,
   } = useAnkiConnectContext()
+
+  const isDropdownDisabled =
+    !ankiConnectEnabled || decks === null || decks.length === 0
 
   return (
     <Box
@@ -40,28 +42,28 @@ export const AnkiConnectBar = () => {
         }
         label="Enable AnkiConnect integration"
       />
-      {ankiConnectEnabled &&
-        (decks === null ? (
-          <DeckSelectSkeleton />
-        ) : (
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="ankiconnect-deck-label">Deck</InputLabel>
-            <Select
-              labelId="ankiconnect-deck-label"
-              label="Deck"
-              value={selectedDeck}
-              onChange={(e) => setSelectedDeck(e.target.value)}
-              onOpen={() => refreshDecks()}
-              disabled={decks.length === 0}
-            >
-              {decks.map((deck) => (
-                <MenuItem key={deck} value={deck} sx={(theme) => onHoverStyle(theme)}>
-                  {deck}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ))}
+      <FormControl
+        size="small"
+        sx={{
+          width: 'min(25ch, 31vw)',
+        }}
+      >
+        <InputLabel id="ankiconnect-deck-label">Deck</InputLabel>
+        <Select
+          labelId="ankiconnect-deck-label"
+          label="Deck"
+          value={selectedDeck}
+          onChange={(e) => setSelectedDeck(e.target.value)}
+          onOpen={() => refreshDecks()}
+          disabled={isDropdownDisabled}
+        >
+          {(decks ?? []).map((deck) => (
+            <MenuItem key={deck} value={deck} sx={(theme) => onHoverStyle(theme)}>
+              {deck}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     </Box>
   )
 }

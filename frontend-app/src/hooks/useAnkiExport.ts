@@ -12,7 +12,7 @@ type DeckPayload = {
 
 export const useAnkiExport = () => {
   const api = useApi()
-  const { enqueueSnackbar } = useSnackbar()
+  const { enqueueErrorSnackbar } = useSnackbar()
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,14 +32,14 @@ export const useAnkiExport = () => {
       } catch (err: unknown) {
         const message = await getApiErrorMessage(err, 'Export failed')
         setError(message)
-        enqueueSnackbar(message)
+        enqueueErrorSnackbar(message)
 
         return null
       } finally {
         setIsExporting(false)
       }
     },
-    [api, enqueueSnackbar]
+    [api, enqueueErrorSnackbar]
   )
 
   const download = useCallback((blob: Blob, filename: string) => {

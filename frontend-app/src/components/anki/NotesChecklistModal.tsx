@@ -6,6 +6,7 @@ import {
   DialogActions,
   Button,
   Checkbox,
+  CircularProgress,
   FormControlLabel,
   List,
   ListItem,
@@ -197,6 +198,11 @@ export const NotesChecklistModal = ({
                 isLoading ||
                 !ankiConnectEnabled ||
                 !selectedDeck
+              }
+              startIcon={
+                isAdding ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : undefined
               }
             >
               {isAdding ? 'Adding…' : 'Add to deck'}

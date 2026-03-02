@@ -1,7 +1,6 @@
 import { Box, List, ListItem, Skeleton } from '@mui/material'
 
 const SKELETON_CARD_COUNT = 6
-const SKELETON_DECK_COUNT = 5
 
 const VERSE_LINE_WIDTHS = ['50%', '55%', '60%', '52%']
 
@@ -9,7 +8,7 @@ const VerseSkeleton = ({ verseIndex }: { verseIndex: number }) => (
   <>
     {VERSE_LINE_WIDTHS.map((width, i) => (
       <Skeleton
-        key={verseIndex * 4 + i}
+        key={`${verseIndex}-${i}`}
         variant="text"
         width={width}
         height={24}
@@ -55,29 +54,4 @@ export const NotesChecklistSkeleton = () => (
       ))}
     </List>
   </>
-)
-
-export const DeckSelectSkeleton = () => (
-  <Skeleton
-    variant="rounded"
-    width={200}
-    height={40}
-    animation="wave"
-    sx={{ borderRadius: 1 }}
-  />
-)
-
-export const DeckListSkeleton = () => (
-  <List dense disablePadding sx={{ mb: 1 }}>
-    {Array.from({ length: SKELETON_DECK_COUNT }).map((_, i) => (
-      <ListItem key={i} disablePadding sx={{ py: 0.5 }}>
-        <Skeleton
-          variant="rounded"
-          width="100%"
-          height={44}
-          sx={{ borderRadius: 1 }}
-        />
-      </ListItem>
-    ))}
-  </List>
 )

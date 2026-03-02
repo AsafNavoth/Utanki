@@ -14,7 +14,7 @@ export type AnkiNotesData = {
 
 export const useAnkiNotes = (payload: object | null) => {
   const api = useApi()
-  const { enqueueSnackbar } = useSnackbar()
+  const { enqueueErrorSnackbar } = useSnackbar()
   const abortRef = useRef<AbortController | null>(null)
   const [notesData, setNotesData] = useState<AnkiNotesData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -53,14 +53,14 @@ export const useAnkiNotes = (payload: object | null) => {
       if (axios.isCancel(err)) return null
       const message = await getApiErrorMessage(err, 'Failed to fetch notes')
       setError(message)
-      enqueueSnackbar(message)
+      enqueueErrorSnackbar(message)
 
       return null
     } finally {
       abortRef.current = null
       setIsLoading(false)
     }
-  }, [api, payload, enqueueSnackbar])
+  }, [api, payload, enqueueErrorSnackbar])
 
   return { fetchNotes, abortFetch, notesData, isLoading, error }
 }

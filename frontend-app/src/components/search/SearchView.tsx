@@ -27,7 +27,7 @@ export const SearchView = () => {
       }
     : {
         open: false,
-        lyricsId: null as number | null,
+        lyricsId: null,
         trackName: '',
         artistName: '',
         albumName: '',

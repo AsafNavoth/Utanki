@@ -70,7 +70,8 @@ export const LyricsModal = ({
 
   const handleExportClick = useCallback(async () => {
     setNotesModalOpen(true)
-    await fetchNotes()
+    const result = await fetchNotes()
+    if (result === null) setNotesModalOpen(false)
   }, [fetchNotes])
 
   const handleDownloadClick = useCallback(
