@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -44,13 +44,47 @@ export const NotesChecklistModal = ({
   isAdding = false,
 }: NotesChecklistModalProps) => {
   const { ankiConnectEnabled, selectedDeck } = useAnkiConnectContext()
-  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const selectionKey = notesData
+    ? `${notesData.deckName}-${notesData.notes.length}`
+    : 'empty'
 
-  useEffect(() => {
-    if (notesData) {
-      setSelected(new Set(notesData.notes.map((_, i) => i)))
-    }
-  }, [notesData])
+  return (
+    <NotesChecklistContent
+      key={selectionKey}
+      open={open}
+      notesData={notesData}
+      isLoading={isLoading}
+      isDownloading={isDownloading}
+      isAdding={isAdding}
+      ankiConnectEnabled={ankiConnectEnabled}
+      selectedDeck={selectedDeck}
+      onDownload={onDownload}
+      onAddToDeck={onAddToDeck}
+      onClose={onClose}
+    />
+  )
+}
+
+type NotesChecklistContentProps = NotesChecklistModalProps & {
+  ankiConnectEnabled: boolean
+  selectedDeck: string
+}
+
+const NotesChecklistContent = ({
+  open,
+  notesData,
+  isLoading,
+  onDownload,
+  onAddToDeck,
+  onClose,
+  isDownloading = false,
+  isAdding = false,
+  ankiConnectEnabled,
+  selectedDeck,
+}: NotesChecklistContentProps) => {
+  const [selected, setSelected] = useState<Set<number>>(() =>
+    notesData ? new Set(notesData.notes.map((_, i) => i)) : new Set()
+  )
 
   const selectedNotes = useMemo(
     () => notesData?.notes.filter((_, i) => selected.has(i)) ?? [],
