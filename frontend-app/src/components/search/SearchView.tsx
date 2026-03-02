@@ -39,7 +39,7 @@ export const SearchView = () => {
   }
 
   const { data, isLoading } = useReactQuery<LrclibSearchResult[]>({
-    queryKey: ['lyrics', searchQuery],
+    queryKey: ['lyricsSearch', searchQuery],
     url: '/api/search',
     config: { params: { q: searchQuery } },
     enabled: !!searchQuery,

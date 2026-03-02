@@ -36,7 +36,7 @@ export const LyricsModal = ({
 }: LyricsModalProps) => {
   const { enqueueErrorSnackbar } = useSnackbar()
   const { data, isLoading } = useReactQuery<LrclibLyricsDetails>({
-    queryKey: ['lyrics', lyricsId],
+    queryKey: ['lyricsDetails', lyricsId],
     url: `/api/lyrics/${lyricsId}`,
     enabled: open && lyricsId !== null,
     throwOnError: (err) => {

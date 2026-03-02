@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSnackbar } from '../snackbar/snackbarContext'
 import { getErrorMessage } from '../../utils/commonStringUtils'
-import { getStorageItem, setStorageItem } from '../../utils/storage'
 import { ANKI_CONNECTION_ERROR_MESSAGE } from '../../utils/commonStringUtils'
 import { isAnkiConnectionError } from '../../utils/apiUtils'
 import { useAnkiConnect } from '../../hooks/useAnkiConnect'
+import { useLocalStorageState } from '../../hooks/useLocalStorageState'
 import { AnkiConnectContext } from './ankiconnectContext'
 
 const ANKICONNECT_ENABLED_KEY = 'utanki-ankiconnect-enabled'
@@ -19,88 +19,71 @@ type AnkiConnectProviderProps = {
 export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
   const { getDeckNames } = useAnkiConnect()
   const { enqueueErrorSnackbar } = useSnackbar()
-  const [ankiConnectEnabled, setAnkiConnectEnabled] = useState(() =>
-    getStorageItem(
-      ANKICONNECT_ENABLED_KEY,
-      (v) => (v === 'true' ? true : null),
-      false
-    )
-  )
-  const [selectedDeck, setSelectedDeckState] = useState(() =>
-    getStorageItem(SELECTED_DECK_KEY, (v) => v, '')
-  )
+  const [ankiConnectEnabled, setAnkiConnectEnabled] = useLocalStorageState({
+    key: ANKICONNECT_ENABLED_KEY,
+    defaultValue: false,
+    parse: (storedValue) => (storedValue === 'true' ? true : null),
+  })
+  const [selectedDeck, setSelectedDeck] = useLocalStorageState({
+    key: SELECTED_DECK_KEY,
+    defaultValue: '',
+  })
   const [decks, setDecks] = useState<string[] | null>(null)
   const [decksError, setDecksError] = useState<string | null>(null)
   const selectedDeckRef = useRef(selectedDeck)
   selectedDeckRef.current = selectedDeck
 
-  const setEnabled = useCallback((enabled: boolean) => {
-    setAnkiConnectEnabled(enabled)
-    setStorageItem(ANKICONNECT_ENABLED_KEY, String(enabled))
-  }, [])
-
-  const setDeck = useCallback((deck: string) => {
-    setSelectedDeckState(deck)
-    setStorageItem(SELECTED_DECK_KEY, deck)
-  }, [])
-
-  const persistAndSetDeck = useCallback((deck: string) => {
-    setSelectedDeckState(deck)
-    setStorageItem(SELECTED_DECK_KEY, deck)
-  }, [])
-
-  useEffect(() => {
-    if (!ankiConnectEnabled) {
-      setDecks(null)
-      setDecksError(null)
-
-      return
-    }
-    setDecks(null)
-    setDecksError(null)
-    getDeckNames()
-      .then((names) => {
-        const filtered = names.filter((n) => !EXCLUDED_DECKS.includes(n))
-        setDecks(filtered)
-        const prev = selectedDeckRef.current
-        const nextDeck = filtered.includes(prev) ? prev : filtered[0] ?? ''
-        persistAndSetDeck(nextDeck)
-      })
-      .catch((err) => {
-        const msg = getErrorMessage(err, 'Failed to fetch decks')
-        const isConnectionError = isAnkiConnectionError(err)
-        const displayMsg = isConnectionError
-          ? ANKI_CONNECTION_ERROR_MESSAGE
-          : msg
-        setDecksError(displayMsg)
-        enqueueErrorSnackbar(displayMsg)
-        if (isConnectionError) setEnabled(false)
-      })
-  }, [ankiConnectEnabled, getDeckNames, enqueueErrorSnackbar, setEnabled, persistAndSetDeck])
-
-  const refreshDecks = useCallback(async () => {
-    if (!ankiConnectEnabled) return
-    try {
-      const names = await getDeckNames()
-      const filtered = names.filter((n) => !EXCLUDED_DECKS.includes(n))
+  const applyDeckNames = useCallback(
+    (names: string[]) => {
+      const filtered = names.filter(
+        (deckName) => !EXCLUDED_DECKS.includes(deckName)
+      )
       setDecks(filtered)
       setDecksError(null)
       const prev = selectedDeckRef.current
-      const nextDeck = filtered.includes(prev) ? prev : filtered[0] ?? ''
-      persistAndSetDeck(nextDeck)
-    } catch (err) {
+      const nextDeck = filtered.includes(prev) ? prev : (filtered[0] ?? '')
+      setSelectedDeck(nextDeck)
+    },
+    [setSelectedDeck]
+  )
+
+  const handleDeckFetchError = useCallback(
+    (err: unknown) => {
       const msg = getErrorMessage(err, 'Failed to fetch decks')
       const isConnectionError = isAnkiConnectionError(err)
       const displayMsg = isConnectionError ? ANKI_CONNECTION_ERROR_MESSAGE : msg
       setDecksError(displayMsg)
       enqueueErrorSnackbar(displayMsg)
-      if (isConnectionError) setEnabled(false)
+      if (isConnectionError) setAnkiConnectEnabled(false)
+    },
+    [enqueueErrorSnackbar, setAnkiConnectEnabled]
+  )
+
+  const loadDecks = useCallback(async () => {
+    const names = await getDeckNames()
+    applyDeckNames(names)
+  }, [getDeckNames, applyDeckNames])
+
+  useEffect(() => {
+    setDecks(null)
+    setDecksError(null)
+    if (!ankiConnectEnabled) return
+
+    loadDecks().catch(handleDeckFetchError)
+  }, [ankiConnectEnabled, loadDecks, handleDeckFetchError])
+
+  const refreshDecks = useCallback(async () => {
+    if (!ankiConnectEnabled) return
+    try {
+      await loadDecks()
+    } catch (err) {
+      handleDeckFetchError(err)
     }
-  }, [ankiConnectEnabled, getDeckNames, enqueueErrorSnackbar, setEnabled, persistAndSetDeck])
+  }, [ankiConnectEnabled, loadDecks, handleDeckFetchError])
 
   const onConnectionError = useCallback(() => {
-    setEnabled(false)
-  }, [setEnabled])
+    setAnkiConnectEnabled(false)
+  }, [])
 
   useEffect(() => {
     if (!ankiConnectEnabled) return
@@ -112,9 +95,9 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
 
   const value = {
     ankiConnectEnabled,
-    setAnkiConnectEnabled: setEnabled,
+    setAnkiConnectEnabled,
     selectedDeck,
-    setSelectedDeck: setDeck,
+    setSelectedDeck,
     decks,
     decksError,
     getDeckNames,

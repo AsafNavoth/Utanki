@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   createTheme,
   CssBaseline,
   ThemeProvider as MuiThemeProvider,
 } from '@mui/material'
-import { getStorageItem, setStorageItem } from '../../utils/storage'
+import { useLocalStorageState } from '../../hooks/useLocalStorageState'
 import { ThemeContext } from './themeContext'
 import type { ThemeMode } from './themeContext'
 
@@ -22,25 +22,22 @@ const parseThemeMode = (inputString: string): ThemeMode | null => {
   }
 }
 
-const getStoredMode = (): ThemeMode =>
-  getStorageItem(STORAGE_KEY, parseThemeMode, LIGHT_THEME_STRING)
-
 type ThemeProviderProps = {
   children: React.ReactNode
 }
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-  const [mode, setMode] = useState<ThemeMode>(getStoredMode)
+  const [mode, setMode] = useLocalStorageState<ThemeMode>({
+    key: STORAGE_KEY,
+    defaultValue: LIGHT_THEME_STRING,
+    parse: parseThemeMode,
+  })
 
   const toggleColorMode = useCallback(() => {
-    setMode((prev) => {
-      const next =
-        prev === LIGHT_THEME_STRING ? DARK_THEME_STRING : LIGHT_THEME_STRING
-      setStorageItem(STORAGE_KEY, next)
-
-      return next
-    })
-  }, [])
+    setMode((prev) =>
+      prev === LIGHT_THEME_STRING ? DARK_THEME_STRING : LIGHT_THEME_STRING
+    )
+  }, [setMode])
 
   const theme = useMemo(
     () =>

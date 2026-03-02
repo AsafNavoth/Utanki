@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import axios, { type AxiosInstance } from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -11,4 +10,6 @@ const createApiClient = (): AxiosInstance =>
     },
   })
 
-export const useApi = () => useMemo(() => createApiClient(), [])
+const apiClient = createApiClient()
+
+export const useApi = () => apiClient

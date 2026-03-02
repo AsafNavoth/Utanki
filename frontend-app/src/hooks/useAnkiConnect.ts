@@ -170,12 +170,13 @@ export const useAnkiConnect = () => {
           err,
           'Failed to add cards to Anki'
         )
-        const displayMessage = isAnkiConnectionError(message)
+        const isConnectionError = isAnkiConnectionError(err)
+        const displayMessage = isConnectionError
           ? ANKI_CONNECTION_ERROR_MESSAGE
           : message
         setError(displayMessage)
         enqueueErrorSnackbar(displayMessage)
-        if (isAnkiConnectionError(message)) ankiContext?.onConnectionError()
+        if (isConnectionError) ankiContext?.onConnectionError()
         throw err
       } finally {
         setIsAdding(false)

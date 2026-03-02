@@ -9,7 +9,7 @@ const getErrorCode = (obj: object): string | undefined => {
   return typeof val === 'string' ? val : undefined
 }
 
-/** Detect Anki connection errors via structured backend response or network failure. */
+// Detect Anki connection errors via structured backend response or network failure.
 export const isAnkiConnectionError = (err: unknown): boolean => {
   if (!axios.isAxiosError(err)) return false
   const data = err.response?.data

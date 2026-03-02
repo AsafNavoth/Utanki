@@ -12,7 +12,9 @@ export type AnkiNotesData = {
   notes: AnkiNote[]
 }
 
-export const useAnkiNotes = (payload: object | null) => {
+type AnkiNotesPayload = Record<string, unknown>
+
+export const useAnkiNotes = (payload: AnkiNotesPayload | null) => {
   const api = useApi()
   const { enqueueErrorSnackbar } = useSnackbar()
   const abortRef = useRef<AbortController | null>(null)
@@ -21,46 +23,66 @@ export const useAnkiNotes = (payload: object | null) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
     setNotesData(null)
+    setIsLoading(false)
     setError(null)
   }, [payload])
 
   const abortFetch = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    setNotesData(null)
+    setIsLoading(false)
   }, [])
 
-  const fetchNotes = useCallback(async () => {
+  const fetchNotes = useCallback(async (): Promise<AnkiNotesData | null> => {
     if (!payload) return null
 
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-
-    setIsLoading(true)
     setError(null)
     setNotesData(null)
+    setIsLoading(true)
+
+    const isStale = () => abortRef.current !== controller
+
     try {
       const { data } = await api.post<AnkiNotesData>(
         '/api/lyrics/anki/notes',
         payload,
         { signal: controller.signal }
       )
+
+      if (isStale()) return null
+
       setNotesData(data)
 
       return data
+
     } catch (err: unknown) {
-      if (axios.isCancel(err)) return null
+      const silentFailure = axios.isCancel(err) || isStale()
+
+      if (silentFailure) return null
+
       const message = await getApiErrorMessage(err, 'Failed to fetch notes')
       setError(message)
       enqueueErrorSnackbar(message)
 
       return null
     } finally {
-      abortRef.current = null
+      if (abortRef.current === controller) abortRef.current = null
       setIsLoading(false)
     }
-  }, [api, payload, enqueueErrorSnackbar])
+  }, [payload, api, enqueueErrorSnackbar])
 
-  return { fetchNotes, abortFetch, notesData, isLoading, error }
+  return {
+    fetchNotes,
+    abortFetch,
+    notesData,
+    isLoading,
+    error,
+  }
 }
