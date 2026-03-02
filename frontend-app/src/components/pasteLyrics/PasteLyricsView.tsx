@@ -7,8 +7,7 @@ import { NotesChecklistModal } from '../anki/NotesChecklistModal'
 import { useAnkiConnect } from '../../hooks/useAnkiConnect'
 import { useAnkiExport } from '../../hooks/useAnkiExport'
 import { useAnkiNotes } from '../../hooks/useAnkiNotes'
-
-const MAX_LYRICS_CHARS = 5000
+import { maxLyricsChars } from '../../env'
 const DEFAULT_DECK_NAME = 'Pasted lyrics'
 
 export const PasteLyricsView = () => {
@@ -90,7 +89,7 @@ export const PasteLyricsView = () => {
   )
 
   const charCount = text.length
-  const isTooLong = charCount > MAX_LYRICS_CHARS
+  const isTooLong = charCount > maxLyricsChars
   const canExport = trimmedText.length > 0 && !isTooLong
 
   return (
@@ -112,11 +111,11 @@ export const PasteLyricsView = () => {
           minRows={6}
           maxRows={20}
           fullWidth
-          helperText={`${charCount}/${MAX_LYRICS_CHARS}`}
+          helperText={`${charCount}/${maxLyricsChars}`}
           error={isTooLong}
           slotProps={{
             htmlInput: {
-              maxLength: MAX_LYRICS_CHARS,
+              maxLength: maxLyricsChars,
             },
           }}
           sx={{

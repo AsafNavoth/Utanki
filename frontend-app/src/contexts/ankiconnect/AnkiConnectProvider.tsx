@@ -5,11 +5,11 @@ import { ANKI_CONNECTION_ERROR_MESSAGE } from '../../utils/commonStringUtils'
 import { isAnkiConnectionError } from '../../utils/apiUtils'
 import { useAnkiConnect } from '../../hooks/useAnkiConnect'
 import { useLocalStorageState } from '../../hooks/useLocalStorageState'
+import { excludedDecks } from '../../env'
 import { AnkiConnectContext } from './ankiconnectContext'
 
 const ANKICONNECT_ENABLED_KEY = 'utanki-ankiconnect-enabled'
 const SELECTED_DECK_KEY = 'utanki-selected-deck'
-const EXCLUDED_DECKS = ['Default', 'デフォルト']
 const DECK_REFRESH_INTERVAL_MS = 30_000
 
 type AnkiConnectProviderProps = {
@@ -36,7 +36,7 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
   const applyDeckNames = useCallback(
     (names: string[]) => {
       const filtered = names.filter(
-        (deckName) => !EXCLUDED_DECKS.includes(deckName)
+        (deckName) => !excludedDecks.includes(deckName)
       )
       setDecks(filtered)
       setDecksError(null)

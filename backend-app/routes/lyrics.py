@@ -7,6 +7,7 @@ from anki_deck import (
     NoVocabularyCardsError,
     build_anki_deck_from_notes,
     build_anki_notes_json,
+    get_anki_model_config,
 )
 from config import LRCLIB_BASE_URL, MAX_LYRICS_CHARS
 from decorators import log_route
@@ -75,6 +76,12 @@ def export_anki_deck():
         mimetype='application/octet-stream',
         headers={'Content-Disposition': 'attachment; filename="utanki.apkg"'},
     )
+
+
+@lyrics_bp.route('/lyrics/anki/model-config')
+def get_anki_model_config_route():
+    """Return Anki model config (modelName, fields, templates, css). Single source of truth."""
+    return jsonify(get_anki_model_config())
 
 
 @lyrics_bp.route('/lyrics/anki/notes', methods=['POST'])

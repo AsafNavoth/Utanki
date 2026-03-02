@@ -113,6 +113,32 @@ CARD_CSS = '''.card {
 }
 .entry, .char { margin-bottom: 0.5em; }'''
 
+FRONT_TEMPLATE = '''<div lang="ja">
+{{Word}}
+<div style='font-size: 20px;'>{{Sentence}}</div>
+</div>'''
+
+BACK_TEMPLATE = '''<div lang="ja">
+{{Word}}
+<div style='font-size: 25px;'>{{Sentence}}</div>
+
+
+<div style='font-size: 25px; padding-bottom:20px'>{{Word Meaning}}</div>
+
+</div>'''
+
+
+def get_anki_model_config() -> dict:
+    """Return model config for AnkiConnect (single source of truth for frontend)."""
+    return {
+        'modelName': ANKI_MODEL_NAME,
+        'fields': [FIELD_WORD, FIELD_SENTENCE, FIELD_WORD_MEANING],
+        'cardTemplates': [
+            {'name': 'Card 1', 'front': FRONT_TEMPLATE, 'back': BACK_TEMPLATE},
+        ],
+        'css': CARD_CSS,
+    }
+
 
 def _get_anki_model() -> genanki.Model:
     """Return the note model for lyrics vocabulary cards."""
@@ -125,21 +151,7 @@ def _get_anki_model() -> genanki.Model:
             {'name': FIELD_WORD_MEANING},
         ],
         templates=[
-            {
-                'name': 'Card 1',
-                'qfmt': '''<div lang="ja">
-{{Word}}
-<div style='font-size: 20px;'>{{Sentence}}</div>
-</div>''',
-                'afmt': '''<div lang="ja">
-{{Word}}
-<div style='font-size: 25px;'>{{Sentence}}</div>
-
-
-<div style='font-size: 25px; padding-bottom:20px'>{{Word Meaning}}</div>
-
-</div>''',
-            },
+            {'name': 'Card 1', 'qfmt': FRONT_TEMPLATE, 'afmt': BACK_TEMPLATE},
         ],
         css=CARD_CSS,
     )

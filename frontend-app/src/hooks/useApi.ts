@@ -1,10 +1,9 @@
 import axios, { type AxiosInstance } from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL
+import { apiUrl } from '../env'
 
 const createApiClient = (): AxiosInstance =>
   axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: apiUrl,
     headers: {
       'Content-Type': 'application/json',
     },

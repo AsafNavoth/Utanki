@@ -1,35 +1,24 @@
 import { useCallback, useContext, useState } from 'react'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSnackbar } from '../contexts/snackbar/snackbarContext'
 import { AnkiConnectContext } from '../contexts/ankiconnect/ankiconnectContext'
 import { pluralSuffix } from '../utils/commonStringUtils'
 import { ANKI_CONNECTION_ERROR_MESSAGE } from '../utils/commonStringUtils'
 import { getApiErrorMessage, isAnkiConnectionError } from '../utils/apiUtils'
+import { useApi } from './useApi'
+import { useReactQuery } from './useReactQuery'
+import { excludedDecks } from '../env'
 import type { AnkiNote } from './useAnkiNotes'
 
 const ANKICONNECT_VERSION = 6
 const ANKICONNECT_URL = 'http://localhost:8765'
-const EXCLUDED_DECKS = ['Default', 'デフォルト']
 
-const CARD_CSS = `.card {
- font-family: "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "Noto Sans JP", "Noto Sans CJK JP", Osaka, "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", "MS UI Gothic", sans-serif;
- font-size: 44px;
- text-align: center;
-}
-.entry, .char { margin-bottom: 0.5em; }`
-
-const FRONT_TEMPLATE =
-  '<div lang="ja">\n{{Word}}\n<div style=\'font-size: 20px;\'>{{Sentence}}</div>\n</div>'
-
-const BACK_TEMPLATE =
-  "<div lang=\"ja\">\n{{Word}}\n<div style='font-size: 25px;'>{{Sentence}}</div>\n\n\n<div style='font-size: 25px; padding-bottom:20px'>{{Word Meaning}}</div>\n\n</div>"
-
-const LYRICS_VOCABULARY_MODEL = {
-  inOrderFields: ['Word', 'Sentence', 'Word Meaning'],
-  cardTemplates: [
-    { Name: 'Card 1', Front: FRONT_TEMPLATE, Back: BACK_TEMPLATE },
-  ],
-  css: CARD_CSS,
+export type AnkiModelConfig = {
+  modelName: string
+  fields: string[]
+  cardTemplates: Array<{ name: string; front: string; back: string }>
+  css: string
 }
 
 type AnkiConnectRequest = {
@@ -57,11 +46,49 @@ const invokeAnkiConnect = async <T>(
   return result
 }
 
+const FIELD_ALIASES: Record<string, string[]> = {
+  Word: ['Word', 'word'],
+  Sentence: ['Sentence', 'sentence'],
+  'Word Meaning': ['Word Meaning', 'WordMeaning', 'Definition'],
+}
+
+const getFieldsForNoteFromConfig = (
+  note: AnkiNote,
+  fieldNames: string[]
+): Record<string, string> => {
+  const noteFields = note.fields ?? {}
+  const mappedFields: Record<string, string> = {}
+
+  for (const canonicalFieldName of fieldNames) {
+    const possibleKeys = FIELD_ALIASES[canonicalFieldName] ?? [
+      canonicalFieldName,
+    ]
+    const firstNonEmptyValue = possibleKeys
+      .map((aliasKey) => noteFields[aliasKey])
+      .find((candidateValue) => candidateValue !== undefined && candidateValue !== '')
+
+    mappedFields[canonicalFieldName] = String(firstNonEmptyValue ?? '')
+  }
+
+  return mappedFields
+}
+
+const ANKI_MODEL_CONFIG_QUERY_KEY = ['ankiModelConfig'] as const
+
+
 export const useAnkiConnect = () => {
+  const api = useApi()
+  const queryClient = useQueryClient()
   const { enqueueSnackbar, enqueueErrorSnackbar } = useSnackbar()
   const ankiContext = useContext(AnkiConnectContext)
   const [isAdding, setIsAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useReactQuery<AnkiModelConfig>({
+    queryKey: ANKI_MODEL_CONFIG_QUERY_KEY,
+    url: '/api/lyrics/anki/model-config',
+    enabled: ankiContext?.ankiConnectEnabled ?? false,
+  })
 
   const addToAnki = useCallback(
     async (targetDeck: string, notes: AnkiNote[], modelName: string) => {
@@ -69,11 +96,24 @@ export const useAnkiConnect = () => {
       setIsAdding(true)
       setError(null)
       try {
+        const config = await queryClient.fetchQuery<AnkiModelConfig>({
+          queryKey: ANKI_MODEL_CONFIG_QUERY_KEY,
+          queryFn: async () => {
+            const { data } = await api.get<AnkiModelConfig | null>(
+              '/api/lyrics/anki/model-config'
+            )
+
+            if (!data) throw new Error('Failed to fetch model config')
+
+            return data
+          },
+        })
+
         const deckNames = await invokeAnkiConnect<string[]>({
           action: 'deckNames',
           version: ANKICONNECT_VERSION,
         })
-        const validDecks = deckNames.filter((n) => !EXCLUDED_DECKS.includes(n))
+        const validDecks = deckNames.filter((n) => !excludedDecks.includes(n))
         if (!validDecks.includes(targetDeck)) {
           throw new Error(
             'The selected deck no longer exists. Please select a different deck from the dropdown.'
@@ -91,42 +131,38 @@ export const useAnkiConnect = () => {
             version: ANKICONNECT_VERSION,
             params: {
               modelName,
-              inOrderFields: LYRICS_VOCABULARY_MODEL.inOrderFields,
-              cardTemplates: LYRICS_VOCABULARY_MODEL.cardTemplates,
-              css: LYRICS_VOCABULARY_MODEL.css,
+              inOrderFields: config.fields,
+              cardTemplates: config.cardTemplates.map((t) => ({
+                Name: t.name,
+                Front: t.front,
+                Back: t.back,
+              })),
+              css: config.css,
             },
           })
         }
 
         if (modelExists) {
+          const templates: Record<string, { Front: string; Back: string }> = {}
+          for (const t of config.cardTemplates) {
+            templates[t.name] = { Front: t.front, Back: t.back }
+          }
           await invokeAnkiConnect({
             action: 'updateModelTemplates',
             version: ANKICONNECT_VERSION,
             params: {
-              model: {
-                name: modelName,
-                templates: {
-                  'Card 1': { Front: FRONT_TEMPLATE, Back: BACK_TEMPLATE },
-                },
-              },
+              model: { name: modelName, templates },
             },
           })
           await invokeAnkiConnect({
             action: 'updateModelStyling',
             version: ANKICONNECT_VERSION,
-            params: { model: { name: modelName, css: CARD_CSS } },
+            params: { model: { name: modelName, css: config.css } },
           })
         }
 
-        const getFieldsForNote = (note: AnkiNote): Record<string, string> => {
-          const f = note.fields ?? {}
-
-          return {
-            Word: String(f.Word ?? f.word ?? ''),
-            Sentence: String(f.Sentence ?? f.sentence ?? ''),
-            'Word Meaning': String(f['Word Meaning'] ?? f.WordMeaning ?? ''),
-          }
-        }
+        const getFieldsForNote = (note: AnkiNote): Record<string, string> =>
+          getFieldsForNoteFromConfig(note, config.fields)
 
         await invokeAnkiConnect({
           action: 'createDeck',
@@ -181,7 +217,7 @@ export const useAnkiConnect = () => {
         setIsAdding(false)
       }
     },
-    [enqueueSnackbar, enqueueErrorSnackbar, ankiContext]
+    [api, queryClient, enqueueSnackbar, enqueueErrorSnackbar, ankiContext]
   )
 
   const getDeckNames = useCallback(async (): Promise<string[]> => {
