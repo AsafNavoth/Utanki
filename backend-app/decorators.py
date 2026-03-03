@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def _get_request_context():
     """Extract request context for logging."""
     request_context = {}
-    
+
     if request.view_args:
         request_context.update(request.view_args)
 
@@ -40,13 +40,12 @@ def _get_response_info(return_value):
         response_json = response_obj.get_json(silent=True)
 
         if isinstance(response_json, dict):
-
             if 'error' in response_json:
                 response_info['error'] = response_json['error']
 
             if 'notes' in response_json:
                 response_info['notes_count'] = len(response_json.get('notes', []))
-            
+
     except Exception:
         pass
 
@@ -125,15 +124,21 @@ def log_route(route_func):
                 if response_info.get('error')
                 else ""
             )
-            logger.warning("%s: returned %s%s", route_name, status_code, error_log_suffix)
+            logger.warning(
+                "%s: returned %s%s", route_name, status_code, error_log_suffix
+            )
         else:
             success_extras = []
             if 'notes_count' in response_info:
                 success_extras.append(f"notes={response_info['notes_count']}")
             if 'size' in response_info:
                 success_extras.append(f"size={response_info['size']}")
-            success_log_suffix = " " + " ".join(success_extras) if success_extras else ""
-            logger.info("%s: success status=%s%s", route_name, status_code, success_log_suffix)
+            success_log_suffix = (
+                " " + " ".join(success_extras) if success_extras else ""
+            )
+            logger.info(
+                "%s: success status=%s%s", route_name, status_code, success_log_suffix
+            )
 
         return return_value
 

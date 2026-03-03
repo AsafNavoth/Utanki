@@ -20,15 +20,15 @@ DECK_ID = 2059400111
 MAX_DEFINITIONS = 5
 
 # Model/field names (must match frontend)
-ANKI_MODEL_NAME = 'Lyrics Vocabulary'
-FIELD_WORD = 'Word'
-FIELD_SENTENCE = 'Sentence'
-FIELD_WORD_MEANING = 'Word Meaning'
+ANKI_MODEL_NAME = "Lyrics Vocabulary"
+FIELD_WORD = "Word"
+FIELD_SENTENCE = "Sentence"
+FIELD_WORD_MEANING = "Word Meaning"
 
 # Error messages (used in routes for response handling)
-ERROR_NO_VOCABULARY_CARDS = 'No vocabulary cards could be generated from the lyrics'
-ERROR_NO_DEFINITIONS = 'No definitions found for any word in the lyrics'
-NO_DEFINITION_FOUND = 'No definition found'
+ERROR_NO_VOCABULARY_CARDS = "No vocabulary cards could be generated from the lyrics"
+ERROR_NO_DEFINITIONS = "No definitions found for any word in the lyrics"
+NO_DEFINITION_FOUND = "No definition found"
 
 
 class NoVocabularyCardsError(Exception):
@@ -50,20 +50,22 @@ def _format_jamdict_result(result: dict) -> str:
     parts = []
 
     # Word entries (JMdict)
-    for entry in result.get('entries', []):
-        kanji_texts = [k.get('text', '') for k in entry.get('kanji', []) if k.get('text')]
-        kana_texts = [k.get('text', '') for k in entry.get('kana', []) if k.get('text')]
-        headword = ' '.join(kanji_texts) if kanji_texts else ' '.join(kana_texts)
+    for entry in result.get("entries", []):
+        kanji_texts = [
+            k.get("text", "") for k in entry.get("kanji", []) if k.get("text")
+        ]
+        kana_texts = [k.get("text", "") for k in entry.get("kana", []) if k.get("text")]
+        headword = " ".join(kanji_texts) if kanji_texts else " ".join(kana_texts)
         if kana_texts and kanji_texts and kana_texts != kanji_texts:
             headword = f"{' '.join(kanji_texts)} ({' '.join(kana_texts)})"
         elif kana_texts and not kanji_texts:
-            headword = ' '.join(kana_texts)
+            headword = " ".join(kana_texts)
 
         glosses = []
-        for sense in entry.get('senses', []):
-            for g in sense.get('SenseGloss', []):
-                text = g.get('text', '')
-                if text and (not g.get('lang') or g.get('lang') == 'eng'):
+        for sense in entry.get("senses", []):
+            for g in sense.get("SenseGloss", []):
+                text = g.get("text", "")
+                if text and (not g.get("lang") or g.get("lang") == "eng"):
                     glosses.append(html.escape(text))
                     if len(glosses) >= MAX_DEFINITIONS:
                         break
@@ -71,18 +73,22 @@ def _format_jamdict_result(result: dict) -> str:
                 break
 
         if headword or glosses:
-            parts.append(f'<div class="entry"><b>{html.escape(headword)}</b><br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>')
+            parts.append(
+                f'<div class="entry"><b>{html.escape(headword)}</b><br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>'
+            )
 
     # Named entities (JMnedict)
-    for entry in result.get('names', []):
-        kanji_texts = [k.get('text', '') for k in entry.get('kanji', []) if k.get('text')]
-        kana_texts = [k.get('text', '') for k in entry.get('kana', []) if k.get('text')]
-        headword = ' '.join(kanji_texts or kana_texts)
+    for entry in result.get("names", []):
+        kanji_texts = [
+            k.get("text", "") for k in entry.get("kanji", []) if k.get("text")
+        ]
+        kana_texts = [k.get("text", "") for k in entry.get("kana", []) if k.get("text")]
+        headword = " ".join(kanji_texts or kana_texts)
 
         glosses = []
-        for sense in entry.get('senses', []):
-            for g in sense.get('SenseGloss', []):
-                text = g.get('text', '')
+        for sense in entry.get("senses", []):
+            for g in sense.get("SenseGloss", []):
+                text = g.get("text", "")
                 if text:
                     glosses.append(html.escape(text))
                     if len(glosses) >= MAX_DEFINITIONS:
@@ -91,52 +97,56 @@ def _format_jamdict_result(result: dict) -> str:
                 break
 
         if headword or glosses:
-            parts.append(f'<div class="entry"><b>{html.escape(headword)}</b> (name)<br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>')
+            parts.append(
+                f'<div class="entry"><b>{html.escape(headword)}</b> (name)<br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>'
+            )
 
     # Kanji characters (KANJIDIC)
-    for char in result.get('chars', []):
-        literal = char.get('literal', '')
-        meanings = char.get('meanings', [])[:MAX_DEFINITIONS]
+    for char in result.get("chars", []):
+        literal = char.get("literal", "")
+        meanings = char.get("meanings", [])[:MAX_DEFINITIONS]
         if literal and meanings:
-            parts.append(f'<div class="char"><b>{html.escape(literal)}</b> (kanji): {"; ".join(html.escape(m) for m in meanings)}</div>')
+            parts.append(
+                f'<div class="char"><b>{html.escape(literal)}</b> (kanji): {"; ".join(html.escape(m) for m in meanings)}</div>'
+            )
 
     if not parts:
         return html.escape(NO_DEFINITION_FOUND)
 
-    return '<br>'.join(parts)
+    return "<br>".join(parts)
 
 
-CARD_CSS = '''.card {
+CARD_CSS = """.card {
  font-family: "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "Noto Sans JP", "Noto Sans CJK JP", Osaka, "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", "MS UI Gothic", sans-serif;
  font-size: 44px;
  text-align: center;
 }
-.entry, .char { margin-bottom: 0.5em; }'''
+.entry, .char { margin-bottom: 0.5em; }"""
 
-FRONT_TEMPLATE = '''<div lang="ja">
+FRONT_TEMPLATE = """<div lang="ja">
 {{Word}}
 <div style='font-size: 20px;'>{{Sentence}}</div>
-</div>'''
+</div>"""
 
-BACK_TEMPLATE = '''<div lang="ja">
+BACK_TEMPLATE = """<div lang="ja">
 {{Word}}
 <div style='font-size: 25px;'>{{Sentence}}</div>
 
 
 <div style='font-size: 25px; padding-bottom:20px'>{{Word Meaning}}</div>
 
-</div>'''
+</div>"""
 
 
 def get_anki_model_config() -> dict:
     """Return model config for AnkiConnect (single source of truth for frontend)."""
     return {
-        'modelName': ANKI_MODEL_NAME,
-        'fields': [FIELD_WORD, FIELD_SENTENCE, FIELD_WORD_MEANING],
-        'cardTemplates': [
-            {'name': 'Card 1', 'front': FRONT_TEMPLATE, 'back': BACK_TEMPLATE},
+        "modelName": ANKI_MODEL_NAME,
+        "fields": [FIELD_WORD, FIELD_SENTENCE, FIELD_WORD_MEANING],
+        "cardTemplates": [
+            {"name": "Card 1", "front": FRONT_TEMPLATE, "back": BACK_TEMPLATE},
         ],
-        'css': CARD_CSS,
+        "css": CARD_CSS,
     }
 
 
@@ -146,12 +156,12 @@ def _get_anki_model() -> genanki.Model:
         MODEL_ID,
         ANKI_MODEL_NAME,
         fields=[
-            {'name': FIELD_WORD},
-            {'name': FIELD_SENTENCE},
-            {'name': FIELD_WORD_MEANING},
+            {"name": FIELD_WORD},
+            {"name": FIELD_SENTENCE},
+            {"name": FIELD_WORD_MEANING},
         ],
         templates=[
-            {'name': 'Card 1', 'qfmt': FRONT_TEMPLATE, 'afmt': BACK_TEMPLATE},
+            {"name": "Card 1", "qfmt": FRONT_TEMPLATE, "afmt": BACK_TEMPLATE},
         ],
         css=CARD_CSS,
     )
@@ -194,11 +204,11 @@ def build_anki_deck(
         deck.add_note(note)
 
     package = genanki.Package(deck)
-    with tempfile.NamedTemporaryFile(suffix='.apkg', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".apkg", delete=False) as tmp:
         tmp_path = tmp.name
     try:
         package.write_to_file(tmp_path)
-        with open(tmp_path, 'rb') as f:
+        with open(tmp_path, "rb") as f:
             apkg_bytes = f.read()
         return apkg_bytes
     finally:
@@ -218,9 +228,9 @@ def _prepare_lyrics_data(
         for word, result, surface_forms in tokenized_raw
     ]
 
-    track_name = lyrics_data.get('trackName', 'Unknown')
-    artist_name = lyrics_data.get('artistName', '')
-    name = f'{track_name} - {artist_name}' if artist_name else track_name
+    track_name = lyrics_data.get("trackName", "Unknown")
+    artist_name = lyrics_data.get("artistName", "")
+    name = f"{track_name} - {artist_name}" if artist_name else track_name
     deck_name = deck_name or name
 
     return tokenized, deck_name
@@ -232,15 +242,15 @@ def build_anki_deck_from_notes(
 ) -> bytes:
     """Build an Anki deck from a list of notes. Each note has fields: {Word, Sentence, Word Meaning}."""
     if not notes:
-        raise ValueError('At least one note is required')
+        raise ValueError("At least one note is required")
     model = _get_anki_model()
     deck = genanki.Deck(DECK_ID, deck_name)
     for note_data in notes:
-        fields = note_data.get('fields', {})
-        word = fields.get(FIELD_WORD, '')
-        sentence = fields.get(FIELD_SENTENCE, '')
-        word_meaning = fields.get(FIELD_WORD_MEANING, '') or fields.get(
-            'Definition', ''
+        fields = note_data.get("fields", {})
+        word = fields.get(FIELD_WORD, "")
+        sentence = fields.get(FIELD_SENTENCE, "")
+        word_meaning = fields.get(FIELD_WORD_MEANING, "") or fields.get(
+            "Definition", ""
         )
         if word or word_meaning:
             note = genanki.Note(
@@ -249,20 +259,18 @@ def build_anki_deck_from_notes(
             )
             deck.add_note(note)
     package = genanki.Package(deck)
-    with tempfile.NamedTemporaryFile(suffix='.apkg', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".apkg", delete=False) as tmp:
         tmp_path = tmp.name
     try:
         package.write_to_file(tmp_path)
-        with open(tmp_path, 'rb') as f:
+        with open(tmp_path, "rb") as f:
             apkg_bytes = f.read()
         return apkg_bytes
     finally:
         os.unlink(tmp_path)
 
 
-def build_anki_notes_json(
-    lyrics_data: dict, deck_name: str | None = None
-) -> dict:
+def build_anki_notes_json(lyrics_data: dict, deck_name: str | None = None) -> dict:
     """Build note data for AnkiConnect. Returns dict with deckName, modelName, notes."""
     tokenized, deck_name = _prepare_lyrics_data(lyrics_data, deck_name)
     note_pairs = _build_notes_from_tokenized(tokenized)
@@ -274,7 +282,7 @@ def build_anki_notes_json(
 
     notes = [
         {
-            'fields': {
+            "fields": {
                 FIELD_WORD: word,
                 FIELD_SENTENCE: sentence,
                 FIELD_WORD_MEANING: definition_html,
@@ -285,7 +293,7 @@ def build_anki_notes_json(
     random.shuffle(notes)
 
     return {
-        'deckName': deck_name,
-        'modelName': ANKI_MODEL_NAME,
-        'notes': notes,
+        "deckName": deck_name,
+        "modelName": ANKI_MODEL_NAME,
+        "notes": notes,
     }

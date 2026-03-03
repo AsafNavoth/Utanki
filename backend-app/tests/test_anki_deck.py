@@ -28,14 +28,16 @@ def test_format_jamdict_result_returns_definition_for_valid_entry():
 def test_format_jamdict_result_limits_to_five_definitions():
     """At most 5 definitions are shown per entry."""
     result = {
-        'entries': [{
-            'kanji': [{'text': '花'}],
-            'kana': [{'text': 'はな'}],
-            'senses': [
-                {'SenseGloss': [{'text': f'def{i}', 'lang': 'eng'}]}
-                for i in range(8)
-            ],
-        }],
+        'entries': [
+            {
+                'kanji': [{'text': '花'}],
+                'kana': [{'text': 'はな'}],
+                'senses': [
+                    {'SenseGloss': [{'text': f'def{i}', 'lang': 'eng'}]}
+                    for i in range(8)
+                ],
+            }
+        ],
         'names': [],
         'chars': [],
     }
@@ -57,15 +59,21 @@ def test_build_anki_deck_has_at_least_one_definition():
     """Deck includes only cards that have definitions."""
     tokenized = [
         ('word1', '', {'entries': [], 'names': [], 'chars': []}),
-        ('word2', '音がする', {
-            'entries': [{
-                'kanji': [{'text': '音'}],
-                'kana': [{'text': 'おと'}],
-                'senses': [{'SenseGloss': [{'text': 'sound', 'lang': 'eng'}]}],
-            }],
-            'names': [],
-            'chars': [],
-        }),
+        (
+            'word2',
+            '音がする',
+            {
+                'entries': [
+                    {
+                        'kanji': [{'text': '音'}],
+                        'kana': [{'text': 'おと'}],
+                        'senses': [{'SenseGloss': [{'text': 'sound', 'lang': 'eng'}]}],
+                    }
+                ],
+                'names': [],
+                'chars': [],
+            },
+        ),
     ]
     apkg_bytes = build_anki_deck(tokenized)
     assert len(apkg_bytes) > 100

@@ -8,3 +8,4 @@ jamdict-data
 genanki>=0.13.0
 pytest>=8.0.0
 requests-mock>=1.11.0
+black>=24.0.0

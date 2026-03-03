@@ -138,8 +138,20 @@ def test_export_anki_deck_returns_apkg_from_notes(client):
         'deckName': 'Test Deck',
         'modelName': 'Lyrics Vocabulary',
         'notes': [
-            {'fields': {'Word': '花', 'Sentence': '花が咲く', 'Word Meaning': '<div>flower</div>'}},
-            {'fields': {'Word': '桜', 'Sentence': '桜の花', 'Word Meaning': '<div>cherry tree</div>'}},
+            {
+                'fields': {
+                    'Word': '花',
+                    'Sentence': '花が咲く',
+                    'Word Meaning': '<div>flower</div>',
+                }
+            },
+            {
+                'fields': {
+                    'Word': '桜',
+                    'Sentence': '桜の花',
+                    'Word Meaning': '<div>cherry tree</div>',
+                }
+            },
         ],
     }
     response = client.post(
@@ -182,7 +194,13 @@ def test_export_anki_notes_returns_json(mock_build, client):
         'deckName': 'Test - Artist',
         'modelName': 'Lyrics Vocabulary',
         'notes': [
-            {'fields': {'Word': '花', 'Sentence': '花が咲く', 'Word Meaning': '<div>flower</div>'}},
+            {
+                'fields': {
+                    'Word': '花',
+                    'Sentence': '花が咲く',
+                    'Word Meaning': '<div>flower</div>',
+                }
+            },
         ],
     }
     lyrics_data = {
@@ -220,13 +238,17 @@ TEST_LYRICS = '''おかわりするわ 飲み終わるまでにきてね
 def test_get_sentence_for_word_finds_lines_with_surface_forms():
     """Sentence extraction finds lines using surface forms (handles conjugation)."""
     # 飲む has surface 飲み in "飲み終わるまでにきてね"
-    assert get_sentence_for_word('飲む', TEST_LYRICS, ['飲み']) == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
+    assert (
+        get_sentence_for_word('飲む', TEST_LYRICS, ['飲み']) == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
+    )
     # おかしい has surface おかしい in "私の何かがおかしいの"
     assert get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい']) == '私の何かが<b>おかしい</b>の'
     # 泳ぐ has surface 泳いで in "みんなが知らない海泳いで"
     assert get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで']) == 'みんなが知らない海<b>泳いで</b>'
     # 光る has surface 光らない in "光らないな"
-    assert get_sentence_for_word('光る', TEST_LYRICS, ['光らない']) == '耳のそば 連絡ないまま <b>光らない</b>な'
+    assert (
+        get_sentence_for_word('光る', TEST_LYRICS, ['光らない']) == '耳のそば 連絡ないまま <b>光らない</b>な'
+    )
 
 
 def test_get_sentence_for_word_truncates_long_paragraphs():
@@ -244,11 +266,24 @@ def test_build_anki_notes_json_includes_sentences_when_tokenizer_returns_surface
     mock_tokenize, client
 ):
     """Full API flow: notes include Sentence when tokenizer provides surface forms."""
+
     def _mock_entry(word, gloss):
-        return {'kanji': [{'text': word}], 'senses': [{'SenseGloss': [{'text': gloss, 'lang': 'eng'}]}]}
+        return {
+            'kanji': [{'text': word}],
+            'senses': [{'SenseGloss': [{'text': gloss, 'lang': 'eng'}]}],
+        }
+
     mock_tokenize.return_value = [
-        ('飲む', {'entries': [_mock_entry('飲む', 'to drink')], 'names': [], 'chars': []}, ['飲み']),
-        ('おかしい', {'entries': [_mock_entry('おかしい', 'strange')], 'names': [], 'chars': []}, ['おかしい']),
+        (
+            '飲む',
+            {'entries': [_mock_entry('飲む', 'to drink')], 'names': [], 'chars': []},
+            ['飲み'],
+        ),
+        (
+            'おかしい',
+            {'entries': [_mock_entry('おかしい', 'strange')], 'names': [], 'chars': []},
+            ['おかしい'],
+        ),
     ]
     response = client.post(
         '/api/lyrics/anki/notes',

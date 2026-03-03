@@ -22,20 +22,17 @@ export const useAnkiNotes = (payload: AnkiNotesPayload | null) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    abortRef.current?.abort()
-    abortRef.current = null
-    setNotesData(null)
-    setIsLoading(false)
-    setError(null)
-  }, [payload])
-
   const abortFetch = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
     setNotesData(null)
     setIsLoading(false)
+    setError(null)
   }, [])
+
+  useEffect(() => {
+    abortFetch()
+  }, [payload, abortFetch])
 
   const fetchNotes = useCallback(async (): Promise<AnkiNotesData | null> => {
     if (!payload) return null

@@ -114,7 +114,7 @@ def extract_lyrics_text(lyrics_data: dict) -> str:
 def remove_english_letters(text: str) -> str:
     """Remove all ASCII letters (a-z, A-Z) from text and normalize whitespace."""
     text = re.sub(r'[a-zA-Z]', '', text)
-    
+
     return re.sub(r'\s+', ' ', text).strip()
 
 
@@ -174,7 +174,7 @@ def _should_keep_token(token: str) -> bool:
     """Filter out single hiragana, single katakana, and punctuation."""
     if not token:
         return False
-        
+
     # Filter tokens that are only punctuation
     if all(unicodedata.category(c).startswith('P') for c in token):
         return False
@@ -184,17 +184,17 @@ def _should_keep_token(token: str) -> bool:
 
     char = token[0]
     # Single hiragana (U+3040–U+309F)
-    if '\u3040' <= char <= '\u309F':
+    if '\u3040' <= char <= '\u309f':
         return False
 
     # Single katakana (U+30A0–U+30FF)
-    if '\u30A0' <= char <= '\u30FF':
+    if '\u30a0' <= char <= '\u30ff':
         return False
 
     # Single punctuation
     if unicodedata.category(char).startswith('P'):
         return False
-    
+
     return True
 
 
@@ -230,8 +230,7 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
         return []
 
     tokenized = [
-        (word, _lookup_word(jam, word), dict_to_surfaces[word])
-        for word in unique_words
+        (word, _lookup_word(jam, word), dict_to_surfaces[word]) for word in unique_words
     ]
     found_count = sum(1 for _, r, _ in tokenized if r.get('found'))
 
@@ -254,5 +253,6 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
 @log_call
 def tokenize_lyrics(text: str) -> list[tuple[str, dict, list[str]]]:
     """Tokenize lyrics and return unique (word, jamdict_result, surface_forms) tuples.
-    surface_forms are used for sentence extraction (handles Japanese verb conjugation)."""
+    surface_forms are used for sentence extraction (handles Japanese verb conjugation).
+    """
     return _tokenize_lyrics_impl(text)

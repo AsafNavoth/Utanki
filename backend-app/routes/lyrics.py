@@ -22,7 +22,14 @@ def _validate_lyrics_request(lyrics_data):
         return jsonify({'error': 'Request body must contain lyrics data'}), 400
     lyrics_text = extract_lyrics_text(lyrics_data)
     if len(lyrics_text) > MAX_LYRICS_CHARS:
-        return jsonify({'error': f'Lyrics text is too long. Max {MAX_LYRICS_CHARS} characters.'}), 413
+        return (
+            jsonify(
+                {
+                    'error': f'Lyrics text is too long. Max {MAX_LYRICS_CHARS} characters.'
+                }
+            ),
+            413,
+        )
     return None
 
 
@@ -55,10 +62,16 @@ def get_lyrics(lyrics_id):
 @log_route
 def export_anki_deck():
     """Build an Anki deck (.apkg) from a list of notes.
-    Accepts { deckName, modelName, notes: [{ fields: { Word, Sentence, Word Meaning } }] }."""
+    Accepts { deckName, modelName, notes: [{ fields: { Word, Sentence, Word Meaning } }] }.
+    """
     data = request.get_json()
     if not data or not isinstance(data, dict):
-        return jsonify({'error': 'Request body must contain deckName, modelName, and notes'}), 400
+        return (
+            jsonify(
+                {'error': 'Request body must contain deckName, modelName, and notes'}
+            ),
+            400,
+        )
     deck_name = data.get('deckName') or data.get('deck')
     notes = data.get('notes')
     if not deck_name:
