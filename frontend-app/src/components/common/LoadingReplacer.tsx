@@ -1,5 +1,10 @@
-import { Box, CircularProgress } from '@mui/material'
+import { Box, CircularProgress, styled } from '@mui/material'
 import { flexCenter } from '../../utils/commonStyles'
+
+const LoadingReplacerRoot = styled(Box)(({ theme }) => ({
+  ...flexCenter,
+  padding: theme.spacing(2),
+}))
 
 type LoadingReplacerProps = {
   isLoading: boolean
@@ -7,7 +12,7 @@ type LoadingReplacerProps = {
 
 export const LoadingReplacer = ({ isLoading }: LoadingReplacerProps) =>
   isLoading ? (
-    <Box sx={{ ...flexCenter, p: 2 }}>
+    <LoadingReplacerRoot>
       <CircularProgress size={24} />
-    </Box>
+    </LoadingReplacerRoot>
   ) : null

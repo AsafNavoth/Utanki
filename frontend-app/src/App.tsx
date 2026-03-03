@@ -1,19 +1,8 @@
-import {
-  AppBar,
-  Paper,
-  Toolbar,
-  Typography,
-  Box,
-  IconButton,
-  Container,
-  styled,
-} from '@mui/material'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
-import LightModeIcon from '@mui/icons-material/LightMode'
-import { useThemeMode } from './contexts/theme/themeContext'
-import { AnkiConnectBar } from './components/anki/AnkiConnectBar'
+import { Paper, Box, Container, styled, useMediaQuery, useTheme } from '@mui/material'
 import { SearchView } from './components/search/SearchView'
-import { PasteLyricsView } from './components/pasteLyrics/PasteLyricsView'
+import { AppBar } from './components/layout/AppBar'
+import { FreeTextView } from './components/freeTextView/FreeTextView'
+import { MobileMainView } from './components/layout/MobileMainView'
 
 const AppLayout = styled(Box)({
   height: '100vh',
@@ -48,36 +37,28 @@ const ContentBox = styled(Box)(({ theme }) => ({
   minHeight: 0,
   overflow: 'hidden',
   marginTop: theme.spacing(2),
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+  },
 }))
 
 export const App = () => {
-  const { mode, toggleColorMode } = useThemeMode()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   return (
     <AppLayout>
-      <AppBar position="fixed" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h6" component="h1">
-            Utanki
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <AnkiConnectBar />
-            <IconButton
-              onClick={toggleColorMode}
-              aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
-              size="small"
-            >
-              {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <AppBar />
       <MainContainer maxWidth={false}>
         <MainPaper>
-          <ContentBox>
-            <SearchView />
-            <PasteLyricsView />
-          </ContentBox>
+          {isMobile ? (
+            <MobileMainView />
+          ) : (
+            <ContentBox>
+              <SearchView />
+              <FreeTextView />
+            </ContentBox>
+          )}
         </MainPaper>
       </MainContainer>
     </AppLayout>

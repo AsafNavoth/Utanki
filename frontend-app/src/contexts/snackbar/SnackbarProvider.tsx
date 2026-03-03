@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react'
-import { Box, Snackbar } from '@mui/material'
+import { Box, Snackbar, styled } from '@mui/material'
 import WarningIcon from '@mui/icons-material/Warning'
 import { SnackbarContext } from './snackbarContext'
 import { getErrorMessage } from '../../utils/commonStringUtils'
+import { getFlexRowCenterStyle } from '../../utils/commonStyles'
 
 type SnackbarProviderProps = {
   children: React.ReactNode
@@ -13,11 +14,15 @@ type SnackbarState = {
   severity: 'error' | 'default'
 } | null
 
+const ErrorSnackbarMessageRoot = styled(Box)(({ theme }) =>
+  getFlexRowCenterStyle({ theme, gap: 1 })
+)
+
 const ErrorSnackbarMessage = ({ message }: { message: string }) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+  <ErrorSnackbarMessageRoot>
     <WarningIcon fontSize="small" />
     {message}
-  </Box>
+  </ErrorSnackbarMessageRoot>
 )
 
 export const SnackbarProvider = ({ children }: SnackbarProviderProps) => {

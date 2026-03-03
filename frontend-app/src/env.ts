@@ -7,5 +7,5 @@ export const maxLyricsChars = parseInt(
 
 export const excludedDecks: string[] =
   import.meta.env.VITE_ANKI_EXCLUDED_DECKS.split(',')
-    .map((s) => s.trim())
+    .map((deckName) => deckName.trim())
     .filter(Boolean)

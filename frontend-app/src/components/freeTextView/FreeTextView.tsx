@@ -1,5 +1,5 @@
-import { Box, TextField, Typography } from '@mui/material'
-import { flexColumnHalf } from '../../utils/commonStyles'
+import { Box, TextField, Typography, styled } from '@mui/material'
+import { getFlexColumnGapStyle, flexColumnHalf } from '../../utils/commonStyles'
 import { useCallback, useMemo, useState } from 'react'
 import { DeckNameDialog } from '../anki/DeckNameDialog'
 import { AnkiExportButton } from '../anki/AnkiExportButton'
@@ -11,13 +11,24 @@ import { maxLyricsChars } from '../../env'
 
 const DEFAULT_DECK_NAME = 'Pasted lyrics'
 
-type PasteLyricsViewProps = {
+const LyricsTextField = styled(TextField)({
+  flex: 1,
+  minHeight: 0,
+  '& .MuiInputBase-root': {
+    height: '100%',
+    alignItems: 'flex-start',
+  },
+  '& .MuiInputBase-input': {
+    overflow: 'auto !important',
+    height: '100% !important',
+  },
+})
+
+type FreeTextViewProps = {
   hideTitle?: boolean
 }
 
-export const PasteLyricsView = ({
-  hideTitle = false,
-}: PasteLyricsViewProps) => {
+export const FreeTextView = ({ hideTitle = false }: FreeTextViewProps) => {
   const [text, setText] = useState('')
   const trimmedText = text.trim()
 
@@ -103,15 +114,21 @@ export const PasteLyricsView = ({
 
   return (
     <Box sx={flexColumnHalf}>
-      {!hideTitle && <Typography variant="h6">Paste lyrics</Typography>}
+      {!hideTitle && (
+        <Typography variant="h6">Paste lyrics</Typography>
+      )}
       <Typography variant="body2" color="text.secondary">
         Paste song lyrics or any Japanese text to create an Anki deck from the
         vocabulary.
       </Typography>
       <Box
-        sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        sx={(theme) => ({
+          flex: 1,
+          minHeight: 0,
+          ...getFlexColumnGapStyle({ theme, gap: 0 }),
+        })}
       >
-        <TextField
+        <LyricsTextField
           label="Lyrics or text"
           placeholder="Paste or type Japanese text here..."
           value={text}
@@ -125,18 +142,6 @@ export const PasteLyricsView = ({
           slotProps={{
             htmlInput: {
               maxLength: maxLyricsChars,
-            },
-          }}
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            '& .MuiInputBase-root': {
-              height: '100%',
-              alignItems: 'flex-start',
-            },
-            '& .MuiInputBase-input': {
-              overflow: 'auto !important',
-              height: '100% !important',
             },
           }}
         />

@@ -6,10 +6,14 @@ import { useReactQuery } from '../../hooks/useReactQuery'
 import type { LrclibSearchResult } from '../../types/lrclib'
 import { SearchBar } from './SearchBar'
 import { SearchResultsList } from './SearchResultsList'
-import { LoadingReplacer } from '../common/LoadingReplacer'
+import { SearchResultsSkeleton } from '../common/LoadingSkeletons'
 import { LyricsModal } from '../lyrics/LyricsModal'
 
-export const SearchView = () => {
+type SearchViewProps = {
+  hideTitle?: boolean
+}
+
+export const SearchView = ({ hideTitle = false }: SearchViewProps) => {
   const { enqueueErrorSnackbar } = useSnackbar()
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -35,6 +39,7 @@ export const SearchView = () => {
 
   const handleSearch = () => {
     const trimmed = searchInput.trim()
+
     if (trimmed) setSearchQuery(trimmed)
   }
 
@@ -43,8 +48,8 @@ export const SearchView = () => {
     url: '/api/search',
     config: { params: { q: searchQuery } },
     enabled: !!searchQuery,
-    throwOnError: (err) => {
-      enqueueErrorSnackbar(err, 'Search failed')
+    throwOnError: (error) => {
+      enqueueErrorSnackbar(error, 'Search failed')
 
       return false
     },
@@ -56,12 +61,19 @@ export const SearchView = () => {
 
   return (
     <Box sx={flexColumnHalf}>
+      {!hideTitle && (
+        <Typography variant="h6">Search</Typography>
+      )}
+      <Typography variant="body2" color="text.secondary">
+        Search for song lyrics with Japanese transcriptions to create Anki
+        cards.
+      </Typography>
       <SearchBar
         value={searchInput}
         onChange={setSearchInput}
         onSearch={handleSearch}
       />
-      <LoadingReplacer isLoading={isLoading} />
+      {isLoading && <SearchResultsSkeleton />}
       {showSearchResults && (
         <SearchResultsList
           results={data}

@@ -1,6 +1,17 @@
-import { List, ListItem, ListItemButton, ListItemText } from '@mui/material'
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  styled,
+} from '@mui/material'
 import type { LrclibSearchResult } from '../../types/lrclib'
-import { onHoverStyle } from '../../utils/commonStyles'
+import {
+  getOnHoverStyle,
+  scrollableListContainer,
+} from '../../utils/commonStyles'
+
+const SearchResultsListRoot = styled(List)(scrollableListContainer)
 
 type SearchResultsListProps = {
   results: LrclibSearchResult[]
@@ -11,12 +22,12 @@ export const SearchResultsList = ({
   results,
   onTrackClick,
 }: SearchResultsListProps) => (
-  <List sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+  <SearchResultsListRoot>
     {results.map((track) => (
       <ListItem key={track.id} divider disablePadding>
         <ListItemButton
           onClick={() => onTrackClick(track)}
-          sx={(theme) => ({ ...onHoverStyle(theme) })}
+          sx={(theme) => ({ ...getOnHoverStyle({ theme }) })}
         >
           <ListItemText
             primary={track.trackName}
@@ -25,5 +36,5 @@ export const SearchResultsList = ({
         </ListItemButton>
       </ListItem>
     ))}
-  </List>
+  </SearchResultsListRoot>
 )

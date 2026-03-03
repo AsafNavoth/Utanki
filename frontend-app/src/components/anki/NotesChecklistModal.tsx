@@ -13,11 +13,26 @@ import {
   Tooltip,
   Typography,
   Box,
+  styled,
 } from '@mui/material'
 import { NotesChecklistSkeleton } from '../common/LoadingSkeletons'
-import { stripHtml, truncate } from '../../utils/commonStringUtils'
+import {
+  getTextWithoutHtml,
+  getTruncatedText,
+} from '../../utils/commonStringUtils'
 import { useAnkiConnectContext } from '../../contexts/ankiconnect/ankiconnectContext'
+import {
+  getBorderedListStyle,
+  getFlexRowCenterStyle,
+} from '../../utils/commonStyles'
 import type { AnkiNote, AnkiNotesData } from '../../hooks/useAnkiNotes'
+
+const SelectAllRow = styled(Box)(({ theme }) => ({
+  ...getFlexRowCenterStyle({ theme, gap: 2 }),
+  marginBottom: theme.spacing(2),
+}))
+
+const NotesList = styled(List)(({ theme }) => getBorderedListStyle({ theme }))
 
 type NotesChecklistModalProps = {
   open: boolean
@@ -43,7 +58,7 @@ export const NotesChecklistModal = ({
   isDownloading = false,
   isAdding = false,
 }: NotesChecklistModalProps) => {
-  const { ankiConnectEnabled, selectedDeck } = useAnkiConnectContext()
+  const { ankiConnectEnabled, selectedDeck, isMobile } = useAnkiConnectContext()
   const selectionKey = notesData
     ? `${notesData.deckName}-${notesData.notes.length}`
     : 'empty'
@@ -58,6 +73,7 @@ export const NotesChecklistModal = ({
       isAdding={isAdding}
       ankiConnectEnabled={ankiConnectEnabled}
       selectedDeck={selectedDeck}
+      isMobile={isMobile}
       onDownload={onDownload}
       onAddToDeck={onAddToDeck}
       onClose={onClose}
@@ -68,6 +84,7 @@ export const NotesChecklistModal = ({
 type NotesChecklistContentProps = NotesChecklistModalProps & {
   ankiConnectEnabled: boolean
   selectedDeck: string
+  isMobile: boolean
 }
 
 const NotesChecklistContent = ({
@@ -81,13 +98,14 @@ const NotesChecklistContent = ({
   isAdding = false,
   ankiConnectEnabled,
   selectedDeck,
+  isMobile,
 }: NotesChecklistContentProps) => {
   const [selected, setSelected] = useState<Set<number>>(() =>
-    notesData ? new Set(notesData.notes.map((_, i) => i)) : new Set()
+    notesData ? new Set(notesData.notes.map((_, index) => index)) : new Set()
   )
 
   const selectedNotes = useMemo(
-    () => notesData?.notes.filter((_, i) => selected.has(i)) ?? [],
+    () => notesData?.notes.filter((_, index) => selected.has(index)) ?? [],
     [notesData, selected]
   )
 
@@ -99,6 +117,7 @@ const NotesChecklistContent = ({
   const handleToggle = useCallback((index: number) => {
     setSelected((prev) => {
       const next = new Set(prev)
+
       if (next.has(index)) next.delete(index)
       else next.add(index)
 
@@ -109,7 +128,7 @@ const NotesChecklistContent = ({
   const handleSelectAll = useCallback(() => {
     if (!notesData) return
     setSelected(
-      allSelected ? new Set() : new Set(notesData.notes.map((_, i) => i))
+      allSelected ? new Set() : new Set(notesData.notes.map((_, index) => index))
     )
   }, [notesData, allSelected])
 
@@ -138,7 +157,7 @@ const NotesChecklistContent = ({
         {isLoading && <NotesChecklistSkeleton />}
         {notesData && !isLoading && (
           <>
-            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <SelectAllRow>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -152,30 +171,21 @@ const NotesChecklistContent = ({
               <Typography variant="body2" color="text.secondary">
                 {selected.size} of {notesData.notes.length} selected
               </Typography>
-            </Box>
-            <List
-              dense
-              sx={{
-                maxHeight: 300,
-                overflow: 'auto',
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 1,
-              }}
-            >
-              {notesData.notes.map((note, i) => {
+            </SelectAllRow>
+            <NotesList dense>
+              {notesData.notes.map((note, index) => {
                 const word = note.fields?.Word ?? ''
                 const def =
                   note.fields?.['Word Meaning'] ?? note.fields?.Definition ?? ''
-                const defPreview = truncate(stripHtml(def), 60)
+                const defPreview = getTruncatedText(getTextWithoutHtml(def), 60)
 
                 return (
-                  <ListItem key={i} disablePadding sx={{ py: 0.5 }}>
+                  <ListItem key={index} disablePadding sx={{ py: 0.5 }}>
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={selected.has(i)}
-                          onChange={() => handleToggle(i)}
+                          checked={selected.has(index)}
+                          onChange={() => handleToggle(index)}
                         />
                       }
                       label={
@@ -200,7 +210,7 @@ const NotesChecklistContent = ({
                   </ListItem>
                 )
               })}
-            </List>
+            </NotesList>
           </>
         )}
       </DialogContent>
@@ -215,34 +225,36 @@ const NotesChecklistContent = ({
         >
           {isDownloading ? 'Preparing…' : 'Download'}
         </Button>
-        <Tooltip
-          title={
-            !ankiConnectEnabled
-              ? 'Enable AnkiConnect integration to add cards to an existing deck'
-              : ''
-          }
-        >
-          <span>
-            <Button
-              variant="contained"
-              onClick={handleAddToDeck}
-              disabled={
-                !someSelected ||
-                isBusy ||
-                isLoading ||
-                !ankiConnectEnabled ||
-                !selectedDeck
-              }
-              startIcon={
-                isAdding ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : undefined
-              }
-            >
-              {isAdding ? 'Adding…' : 'Add to deck'}
-            </Button>
-          </span>
-        </Tooltip>
+        {!isMobile && (
+          <Tooltip
+            title={
+              !ankiConnectEnabled
+                ? 'Enable AnkiConnect integration to add cards to an existing deck'
+                : ''
+            }
+          >
+            <span>
+              <Button
+                variant="contained"
+                onClick={handleAddToDeck}
+                disabled={
+                  !someSelected ||
+                  isBusy ||
+                  isLoading ||
+                  !ankiConnectEnabled ||
+                  !selectedDeck
+                }
+                startIcon={
+                  isAdding ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : undefined
+                }
+              >
+                {isAdding ? 'Adding…' : 'Add to deck'}
+              </Button>
+            </span>
+          </Tooltip>
+        )}
       </DialogActions>
     </Dialog>
   )

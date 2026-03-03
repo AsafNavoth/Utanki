@@ -16,7 +16,7 @@ export const useAnkiExport = () => {
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const buildDeck = useCallback(
+  const buildDeckBlob = useCallback(
     async (payload: DeckPayload): Promise<Blob | null> => {
       if (payload.notes.length === 0) return null
 
@@ -29,8 +29,8 @@ export const useAnkiExport = () => {
         })
 
         return new Blob([response.data])
-      } catch (err: unknown) {
-        const message = await getApiErrorMessage(err, 'Export failed')
+      } catch (error: unknown) {
+        const message = await getApiErrorMessage(error, 'Export failed')
         setError(message)
         enqueueErrorSnackbar(message)
 
@@ -42,7 +42,7 @@ export const useAnkiExport = () => {
     [api, enqueueErrorSnackbar]
   )
 
-  const download = useCallback((blob: Blob, filename: string) => {
+  const downloadFile = useCallback((blob: Blob, filename: string) => {
     const objectUrl = URL.createObjectURL(blob)
     const downloadAnchor = document.createElement('a')
     downloadAnchor.href = objectUrl
@@ -51,5 +51,5 @@ export const useAnkiExport = () => {
     URL.revokeObjectURL(objectUrl)
   }, [])
 
-  return { buildDeck, download, isExporting, error }
+  return { buildDeckBlob, downloadFile, isExporting, error }
 }

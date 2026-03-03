@@ -12,6 +12,7 @@ export const SnackbarContext = createContext<SnackbarContextValue | null>(null)
 
 export const useSnackbar = () => {
   const ctx = useContext(SnackbarContext)
+
   if (!ctx) {
     throw new Error('useSnackbar must be used within SnackbarProvider')
   }

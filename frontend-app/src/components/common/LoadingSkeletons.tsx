@@ -1,8 +1,26 @@
-import { Box, List, ListItem, Skeleton } from '@mui/material'
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemButton,
+  Skeleton,
+  styled,
+} from '@mui/material'
+import {
+  getBorderedListStyle,
+  getFlexColumnGapPlainStyle,
+  scrollableListContainer,
+} from '../../utils/commonStyles'
 
 const SKELETON_CARD_COUNT = 6
 
 const VERSE_LINE_WIDTHS = ['50%', '55%', '60%', '52%']
+
+const NotesListSkeleton = styled(List)(({ theme }) => ({
+  ...getBorderedListStyle({ theme, overflow: 'hidden', padding: 1 }),
+}))
+
+const SearchResultsListRoot = styled(List)(scrollableListContainer)
 
 const VerseSkeleton = ({ verseIndex }: { verseIndex: number }) => (
   <>
@@ -19,7 +37,7 @@ const VerseSkeleton = ({ verseIndex }: { verseIndex: number }) => (
 )
 
 export const LyricsSkeleton = () => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+  <Box sx={getFlexColumnGapPlainStyle({ gap: 1 })}>
     <VerseSkeleton verseIndex={0} />
     <Box sx={{ height: 8 }} />
     <VerseSkeleton verseIndex={1} />
@@ -31,19 +49,9 @@ export const LyricsSkeleton = () => (
 export const NotesChecklistSkeleton = () => (
   <>
     <Skeleton variant="text" width={120} height={24} sx={{ mb: 2 }} />
-    <List
-      dense
-      sx={{
-        maxHeight: 300,
-        overflow: 'hidden',
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 1,
-        p: 1,
-      }}
-    >
-      {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
-        <ListItem key={i} disablePadding sx={{ py: 0.5 }}>
+    <NotesListSkeleton dense>
+      {Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
+        <ListItem key={index} disablePadding sx={{ py: 0.5 }}>
           <Skeleton
             variant="rounded"
             width="100%"
@@ -52,6 +60,23 @@ export const NotesChecklistSkeleton = () => (
           />
         </ListItem>
       ))}
-    </List>
+    </NotesListSkeleton>
   </>
+)
+
+const SEARCH_RESULT_SKELETON_COUNT = 5
+
+export const SearchResultsSkeleton = () => (
+  <SearchResultsListRoot>
+    {Array.from({ length: SEARCH_RESULT_SKELETON_COUNT }).map((_, index) => (
+      <ListItem key={index} divider disablePadding>
+        <ListItemButton disabled sx={{ py: 1.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Skeleton variant="text" width="80%" height={24} />
+            <Skeleton variant="text" width="60%" height={20} />
+          </Box>
+        </ListItemButton>
+      </ListItem>
+    ))}
+  </SearchResultsListRoot>
 )

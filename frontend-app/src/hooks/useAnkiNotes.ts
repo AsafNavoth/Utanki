@@ -62,12 +62,12 @@ export const useAnkiNotes = (payload: AnkiNotesPayload | null) => {
 
       return data
 
-    } catch (err: unknown) {
-      const silentFailure = axios.isCancel(err) || isStale()
+    } catch (error: unknown) {
+      const silentFailure = axios.isCancel(error) || isStale()
 
       if (silentFailure) return null
 
-      const message = await getApiErrorMessage(err, 'Failed to fetch notes')
+      const message = await getApiErrorMessage(error, 'Failed to fetch notes')
       setError(message)
       enqueueErrorSnackbar(message)
 

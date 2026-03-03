@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMediaQuery, useTheme } from '@mui/material'
 import { useSnackbar } from '../snackbar/snackbarContext'
 import { getErrorMessage } from '../../utils/commonStringUtils'
 import { ANKI_CONNECTION_ERROR_MESSAGE } from '../../utils/commonStringUtils'
@@ -17,6 +18,8 @@ type AnkiConnectProviderProps = {
 }
 
 export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const { getDeckNames } = useAnkiConnect()
   const { enqueueErrorSnackbar } = useSnackbar()
   const [ankiConnectEnabled, setAnkiConnectEnabled] = useLocalStorageState({
@@ -33,7 +36,11 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
   const selectedDeckRef = useRef(selectedDeck)
   selectedDeckRef.current = selectedDeck
 
-  const applyDeckNames = useCallback(
+  const onConnectionError = () => {
+    setAnkiConnectEnabled(false)
+  }
+
+  const setDecksFromNames = useCallback(
     (names: string[]) => {
       const filtered = names.filter(
         (deckName) => !excludedDecks.includes(deckName)
@@ -48,12 +55,13 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
   )
 
   const handleDeckFetchError = useCallback(
-    (err: unknown) => {
-      const msg = getErrorMessage(err, 'Failed to fetch decks')
-      const isConnectionError = isAnkiConnectionError(err)
+    (error: unknown) => {
+      const msg = getErrorMessage(error, 'Failed to fetch decks')
+      const isConnectionError = isAnkiConnectionError(error)
       const displayMsg = isConnectionError ? ANKI_CONNECTION_ERROR_MESSAGE : msg
       setDecksError(displayMsg)
       enqueueErrorSnackbar(displayMsg)
+
       if (isConnectionError) setAnkiConnectEnabled(false)
     },
     [enqueueErrorSnackbar, setAnkiConnectEnabled]
@@ -61,12 +69,13 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
 
   const loadDecks = useCallback(async () => {
     const names = await getDeckNames()
-    applyDeckNames(names)
-  }, [getDeckNames, applyDeckNames])
+    setDecksFromNames(names)
+  }, [getDeckNames, setDecksFromNames])
 
   useEffect(() => {
     setDecks(null)
     setDecksError(null)
+
     if (!ankiConnectEnabled) return
 
     loadDecks().catch(handleDeckFetchError)
@@ -76,14 +85,10 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
     if (!ankiConnectEnabled) return
     try {
       await loadDecks()
-    } catch (err) {
-      handleDeckFetchError(err)
+    } catch (error) {
+      handleDeckFetchError(error)
     }
   }, [ankiConnectEnabled, loadDecks, handleDeckFetchError])
-
-  const onConnectionError = useCallback(() => {
-    setAnkiConnectEnabled(false)
-  }, [])
 
   useEffect(() => {
     if (!ankiConnectEnabled) return
@@ -93,20 +98,21 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
     return () => clearInterval(id)
   }, [ankiConnectEnabled, refreshDecks])
 
-  const value = {
-    ankiConnectEnabled,
-    setAnkiConnectEnabled,
-    selectedDeck,
-    setSelectedDeck,
-    decks,
-    decksError,
-    getDeckNames,
-    refreshDecks,
-    onConnectionError,
-  }
-
   return (
-    <AnkiConnectContext.Provider value={value}>
+    <AnkiConnectContext.Provider
+      value={{
+        ankiConnectEnabled: ankiConnectEnabled && !isMobile,
+        isMobile,
+        setAnkiConnectEnabled,
+        selectedDeck,
+        setSelectedDeck,
+        decks,
+        decksError,
+        getDeckNames,
+        refreshDecks,
+        onConnectionError,
+      }}
+    >
       {children}
     </AnkiConnectContext.Provider>
   )

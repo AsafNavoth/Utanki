@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react'
 
 export type AnkiConnectContextValue = {
   ankiConnectEnabled: boolean
+  isMobile: boolean
   setAnkiConnectEnabled: (enabled: boolean) => void
   selectedDeck: string
   setSelectedDeck: (deck: string) => void
@@ -18,6 +19,7 @@ export const AnkiConnectContext = createContext<AnkiConnectContextValue | null>(
 
 export const useAnkiConnectContext = () => {
   const ctx = useContext(AnkiConnectContext)
+
   if (!ctx) {
     throw new Error(
       'useAnkiConnectContext must be used within AnkiConnectProvider'

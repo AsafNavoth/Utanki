@@ -5,6 +5,7 @@ import {
   DialogContent,
   Typography,
   Box,
+  styled,
 } from '@mui/material'
 import { useReactQuery } from '../../hooks/useReactQuery'
 import { useSnackbar } from '../../contexts/snackbar/snackbarContext'
@@ -16,6 +17,7 @@ import { DeckNameDialog } from '../anki/DeckNameDialog'
 import { LyricsSkeleton } from '../common/LoadingSkeletons'
 import { AnkiExportButton } from '../anki/AnkiExportButton'
 import { NotesChecklistModal } from '../anki/NotesChecklistModal'
+import { getFlexRowCenterStyle } from '../../utils/commonStyles'
 
 type LyricsModalProps = {
   open: boolean
@@ -25,6 +27,26 @@ type LyricsModalProps = {
   albumName: string
   onClose: () => void
 }
+
+const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  ...getFlexRowCenterStyle({ theme, gap: 1 }),
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+}))
+
+const titleTypographySx = {
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
+
+const lyricsTextSx = {
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+  fontFamily: 'inherit',
+} as const
 
 export const LyricsModal = ({
   open,
@@ -39,8 +61,8 @@ export const LyricsModal = ({
     queryKey: ['lyricsDetails', lyricsId],
     url: `/api/lyrics/${lyricsId}`,
     enabled: open && lyricsId !== null,
-    throwOnError: (err) => {
-      enqueueErrorSnackbar(err, 'Failed to load lyrics')
+    throwOnError: (error) => {
+      enqueueErrorSnackbar(error, 'Failed to load lyrics')
 
       return false
     },
@@ -55,9 +77,9 @@ export const LyricsModal = ({
     notesData,
     isLoading: isNotesLoading,
   } = useAnkiNotes(payload)
-  const { buildDeck, download, isExporting } = useAnkiExport()
+  const { buildDeckBlob, downloadFile, isExporting } = useAnkiExport()
   const {
-    addToAnki,
+    addNotesToAnki,
     isAddingToAnki,
     clearError: clearAnkiConnectError,
   } = useAnkiConnect()
@@ -71,6 +93,7 @@ export const LyricsModal = ({
   const handleExportClick = useCallback(async () => {
     setNotesModalOpen(true)
     const result = await fetchNotes()
+
     if (result === null) setNotesModalOpen(false)
   }, [fetchNotes])
 
@@ -85,19 +108,20 @@ export const LyricsModal = ({
   const handleDeckNameConfirm = useCallback(
     async (deckName: string) => {
       if (!notesData || !pendingDownloadNotes) return
-      const blob = await buildDeck({
+      const blob = await buildDeckBlob({
         deckName,
         modelName: notesData.modelName,
         notes: pendingDownloadNotes,
       })
+
       if (blob) {
-        download(blob, `${deckName.replace(/\//g, '-')}.apkg`)
+        downloadFile(blob, `${deckName.replace(/\//g, '-')}.apkg`)
         setDeckNameDialogOpen(false)
         setPendingDownloadNotes(null)
         setNotesModalOpen(false)
       }
     },
-    [notesData, pendingDownloadNotes, buildDeck, download]
+    [notesData, pendingDownloadNotes, buildDeckBlob, downloadFile]
   )
 
   const handleAddToDeck = useCallback(
@@ -106,10 +130,10 @@ export const LyricsModal = ({
       deckName: string
     ) => {
       if (!notesData) return
-      await addToAnki(deckName, selectedNotes, notesData.modelName)
+      await addNotesToAnki(deckName, selectedNotes, notesData.modelName)
       setNotesModalOpen(false)
     },
-    [addToAnki, notesData]
+    [addNotesToAnki, notesData]
   )
 
   const dialogTitle = [trackName, artistName, albumName]
@@ -118,26 +142,8 @@ export const LyricsModal = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
-        <Typography
-          component="span"
-          variant="h6"
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
+      <StyledDialogTitle>
+        <Typography variant="h6" component="span" sx={titleTypographySx}>
           {dialogTitle || 'Lyrics'}
         </Typography>
         {data && (
@@ -151,21 +157,14 @@ export const LyricsModal = ({
             </Box>
           </>
         )}
-      </DialogTitle>
+      </StyledDialogTitle>
       <DialogContent>
         {isLoading && <LyricsSkeleton />}
         {data && !lyricsToShow && data.instrumental && (
           <Typography color="text.secondary">Instrumental track</Typography>
         )}
         {lyricsToShow && (
-          <Typography
-            component="pre"
-            sx={{
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              fontFamily: 'inherit',
-            }}
-          >
+          <Typography component="pre" sx={lyricsTextSx}>
             {lyricsToShow}
           </Typography>
         )}

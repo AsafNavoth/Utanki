@@ -65,7 +65,7 @@ const DeckNameForm = ({
           label="Deck name"
           placeholder={defaultName}
           value={deckName}
-          onChange={(e) => setDeckName(e.target.value)}
+          onChange={(event) => setDeckName(event.target.value)}
           size="small"
           sx={{ mt: 1 }}
           slotProps={{

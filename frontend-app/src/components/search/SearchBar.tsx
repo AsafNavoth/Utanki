@@ -1,4 +1,7 @@
-import { Box, TextField, Button } from '@mui/material'
+import { Box, TextField, Button, styled } from '@mui/material'
+import { getFlexRowCenterStyle } from '../../utils/commonStyles'
+
+const SearchBarRoot = styled(Box)(({ theme }) => getFlexRowCenterStyle({ theme, gap: 1 }))
 
 type SearchBarProps = {
   value: string
@@ -7,17 +10,17 @@ type SearchBarProps = {
 }
 
 export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => (
-  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', pt: 1 }}>
+  <SearchBarRoot>
     <TextField
       label="Search songs"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+      onChange={(event) => onChange(event.target.value)}
+      onKeyDown={(event) => event.key === 'Enter' && onSearch()}
       placeholder="Search by song, artist, or album..."
       fullWidth
     />
     <Button variant="contained" onClick={onSearch}>
       Search
     </Button>
-  </Box>
+  </SearchBarRoot>
 )

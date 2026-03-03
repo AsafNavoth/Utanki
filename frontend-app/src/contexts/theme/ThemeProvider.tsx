@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import {
   createTheme,
   CssBaseline,
+  GlobalStyles,
   ThemeProvider as MuiThemeProvider,
 } from '@mui/material'
 import { useLocalStorageState } from '../../hooks/useLocalStorageState'
@@ -12,7 +13,7 @@ const STORAGE_KEY = 'utanki-theme-mode'
 const LIGHT_THEME_STRING = 'light'
 const DARK_THEME_STRING = 'dark'
 
-const parseThemeMode = (inputString: string): ThemeMode | null => {
+const getThemeModeFromString = (inputString: string): ThemeMode | null => {
   switch (inputString) {
     case LIGHT_THEME_STRING:
     case DARK_THEME_STRING:
@@ -30,7 +31,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const [mode, setMode] = useLocalStorageState<ThemeMode>({
     key: STORAGE_KEY,
     defaultValue: LIGHT_THEME_STRING,
-    parse: parseThemeMode,
+    parse: getThemeModeFromString,
   })
 
   const toggleColorMode = useCallback(() => {
@@ -64,6 +65,13 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     <ThemeContext.Provider value={contextValue}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
+        <GlobalStyles
+          styles={{
+            '@media (max-width: 600px)': {
+              html: { fontSize: '22px' },
+            },
+          }}
+        />
         {children}
       </MuiThemeProvider>
     </ThemeContext.Provider>
