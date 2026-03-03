@@ -5,13 +5,14 @@ import {
   Box,
   IconButton,
   styled,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
-import { useThemeMode } from '../../contexts/theme/themeContext'
-import { getFlexRowWrapStyle } from '../../utils/commonStyles'
+import {
+  useThemeMode,
+  LIGHT_THEME_STRING,
+  DARK_THEME_STRING,
+} from '../../contexts/theme/themeContext'
 import { AnkiConnectBar } from '../anki/AnkiConnectBar'
 
 const StyledAppBar = styled(MuiAppBar)(({ theme }) => ({
@@ -26,29 +27,56 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   [theme.breakpoints.up('sm')]: {
     minHeight: 64,
   },
+  [theme.breakpoints.down('sm')]: {
+    flexWrap: 'nowrap',
+  },
+}))
+
+const AppTitle = styled(Typography)(({ theme }) => ({
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1rem',
+  },
+}))
+
+const ControlsBox = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  marginLeft: 'auto',
+  [theme.breakpoints.down('sm')]: {
+    flexWrap: 'nowrap',
+    minWidth: 0,
+  },
+}))
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(0.5),
+  },
 }))
 
 export const AppBar = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const { mode, toggleColorMode } = useThemeMode()
+  const { mode, toggleColorMode, isAnkiConnectSupported, isMobile } =
+    useThemeMode()
 
   return (
-    <StyledAppBar position="fixed" color="default" elevation={0}>
+    <StyledAppBar
+      position={isMobile ? 'static' : 'fixed'}
+      color="default"
+      elevation={0}
+    >
       <StyledToolbar>
-        <Typography variant="h6" component="h1">
-          Utanki
-        </Typography>
-        <Box sx={(theme) => getFlexRowWrapStyle({ theme })}>
-          {!isMobile && <AnkiConnectBar />}
-          <IconButton
+        <AppTitle variant="h6">Utanki</AppTitle>
+        <ControlsBox>
+          {isAnkiConnectSupported && <AnkiConnectBar />}
+          <StyledIconButton
             onClick={toggleColorMode}
-            aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
+            aria-label={`Switch to ${mode === LIGHT_THEME_STRING ? DARK_THEME_STRING : LIGHT_THEME_STRING} mode`}
             size="small"
           >
-            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-          </IconButton>
-        </Box>
+            {mode === LIGHT_THEME_STRING ? <DarkModeIcon /> : <LightModeIcon />}
+          </StyledIconButton>
+        </ControlsBox>
       </StyledToolbar>
     </StyledAppBar>
   )

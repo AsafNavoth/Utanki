@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useMediaQuery, useTheme } from '@mui/material'
 import { useSnackbar } from '../snackbar/snackbarContext'
+import { useThemeMode } from '../theme/themeContext'
 import { getErrorMessage } from '../../utils/commonStringUtils'
 import { ANKI_CONNECTION_ERROR_MESSAGE } from '../../utils/commonStringUtils'
 import { isAnkiConnectionError } from '../../utils/apiUtils'
@@ -18,8 +18,7 @@ type AnkiConnectProviderProps = {
 }
 
 export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const { isAnkiConnectSupported } = useThemeMode()
   const { getDeckNames } = useAnkiConnect()
   const { enqueueErrorSnackbar } = useSnackbar()
   const [ankiConnectEnabled, setAnkiConnectEnabled] = useLocalStorageState({
@@ -101,8 +100,8 @@ export const AnkiConnectProvider = ({ children }: AnkiConnectProviderProps) => {
   return (
     <AnkiConnectContext.Provider
       value={{
-        ankiConnectEnabled: ankiConnectEnabled && !isMobile,
-        isMobile,
+        ankiConnectEnabled: ankiConnectEnabled && isAnkiConnectSupported,
+        isAnkiConnectSupported,
         setAnkiConnectEnabled,
         selectedDeck,
         setSelectedDeck,

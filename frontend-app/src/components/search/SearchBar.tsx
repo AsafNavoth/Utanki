@@ -1,7 +1,9 @@
 import { Box, TextField, Button, styled } from '@mui/material'
 import { getFlexRowCenterStyle } from '../../utils/commonStyles'
 
-const SearchBarRoot = styled(Box)(({ theme }) => getFlexRowCenterStyle({ theme, gap: 1 }))
+const SearchBarRoot = styled(Box)(({ theme }) =>
+  getFlexRowCenterStyle({ theme, gap: 1 })
+)
 
 type SearchBarProps = {
   value: string

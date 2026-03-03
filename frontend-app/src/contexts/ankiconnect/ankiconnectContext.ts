@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 export type AnkiConnectContextValue = {
   ankiConnectEnabled: boolean
-  isMobile: boolean
+  isAnkiConnectSupported: boolean
   setAnkiConnectEnabled: (enabled: boolean) => void
   selectedDeck: string
   setSelectedDeck: (deck: string) => void

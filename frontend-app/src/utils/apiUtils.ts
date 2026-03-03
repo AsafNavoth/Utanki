@@ -4,8 +4,10 @@ import { getErrorMessage } from './commonStringUtils'
 const ANKI_CONNECTION_ERROR_CODE = 'ANKI_CONNECTION'
 
 const getErrorCode = (responseData: object): string | undefined => {
-  const errorCodeValue =
-    Object.getOwnPropertyDescriptor(responseData, 'errorCode')?.value
+  const errorCodeValue = Object.getOwnPropertyDescriptor(
+    responseData,
+    'errorCode'
+  )?.value
 
   return typeof errorCodeValue === 'string' ? errorCodeValue : undefined
 }

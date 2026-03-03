@@ -91,7 +91,9 @@ export const scrollableListContainer = {
 }
 
 /** Flex column with gap. Plain object for styled() when theme callback causes type issues. */
-export const getFlexColumnGapPlainStyle = ({ gap = 2 }: { gap?: number } = {}) => ({
+export const getFlexColumnGapPlainStyle = ({
+  gap = 2,
+}: { gap?: number } = {}) => ({
   display: 'flex',
   flexDirection: 'column',
   gap,

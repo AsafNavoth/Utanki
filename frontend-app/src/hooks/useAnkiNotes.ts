@@ -58,7 +58,6 @@ export const useAnkiNotes = (payload: AnkiNotesPayload | null) => {
       setNotesData(data)
 
       return data
-
     } catch (error: unknown) {
       const silentFailure = axios.isCancel(error) || isStale()
 

@@ -4,14 +4,23 @@ import {
   CssBaseline,
   GlobalStyles,
   ThemeProvider as MuiThemeProvider,
+  useMediaQuery,
 } from '@mui/material'
 import { useLocalStorageState } from '../../hooks/useLocalStorageState'
-import { ThemeContext } from './themeContext'
+import {
+  ThemeContext,
+  LIGHT_THEME_STRING,
+  DARK_THEME_STRING,
+} from './themeContext'
 import type { ThemeMode } from './themeContext'
 
+const MOBILE_UA_REGEX =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+
+const getIsMobileFromUserAgent = (): boolean =>
+  typeof navigator !== 'undefined' && MOBILE_UA_REGEX.test(navigator.userAgent)
+
 const STORAGE_KEY = 'utanki-theme-mode'
-const LIGHT_THEME_STRING = 'light'
-const DARK_THEME_STRING = 'dark'
 
 const getThemeModeFromString = (inputString: string): ThemeMode | null => {
   switch (inputString) {
@@ -48,7 +57,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
           primary: { main: '#14b8a6' },
           secondary: { main: '#38bdf8' },
           background:
-            mode === 'light'
+            mode === LIGHT_THEME_STRING
               ? { default: '#eef2f6', paper: '#e2e8f0' }
               : { default: '#131A20', paper: '#2F3B46' },
         },
@@ -56,9 +65,14 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     [mode]
   )
 
+  const isNarrowViewport = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobileUA = getIsMobileFromUserAgent()
+  const isMobile = isNarrowViewport
+  const isAnkiConnectSupported = !isMobileUA
+
   const contextValue = useMemo(
-    () => ({ mode, toggleColorMode }),
-    [mode, toggleColorMode]
+    () => ({ mode, toggleColorMode, isMobile, isAnkiConnectSupported }),
+    [mode, toggleColorMode, isMobile, isAnkiConnectSupported]
   )
 
   return (

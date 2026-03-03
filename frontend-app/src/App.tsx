@@ -1,4 +1,5 @@
-import { Paper, Box, Container, styled, useMediaQuery, useTheme } from '@mui/material'
+import { Paper, Box, Container, styled } from '@mui/material'
+import { useThemeMode } from './contexts/theme/themeContext'
 import { SearchView } from './components/search/SearchView'
 import { AppBar } from './components/layout/AppBar'
 import { FreeTextView } from './components/freeTextView/FreeTextView'
@@ -43,13 +44,12 @@ const ContentBox = styled(Box)(({ theme }) => ({
 }))
 
 export const App = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const { isMobile } = useThemeMode()
 
   return (
     <AppLayout>
       <AppBar />
-      <MainContainer maxWidth={false}>
+      <MainContainer maxWidth={false} sx={isMobile ? { paddingTop: 0 } : {}}>
         <MainPaper>
           {isMobile ? (
             <MobileMainView />

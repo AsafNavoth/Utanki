@@ -114,9 +114,7 @@ export const FreeTextView = ({ hideTitle = false }: FreeTextViewProps) => {
 
   return (
     <Box sx={flexColumnHalf}>
-      {!hideTitle && (
-        <Typography variant="h6">Paste lyrics</Typography>
-      )}
+      {!hideTitle && <Typography variant="h6">Paste lyrics</Typography>}
       <Typography variant="body2" color="text.secondary">
         Paste song lyrics or any Japanese text to create an Anki deck from the
         vocabulary.

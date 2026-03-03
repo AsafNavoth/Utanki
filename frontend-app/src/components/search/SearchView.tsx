@@ -61,9 +61,7 @@ export const SearchView = ({ hideTitle = false }: SearchViewProps) => {
 
   return (
     <Box sx={flexColumnHalf}>
-      {!hideTitle && (
-        <Typography variant="h6">Search</Typography>
-      )}
+      {!hideTitle && <Typography variant="h6">Search</Typography>}
       <Typography variant="body2" color="text.secondary">
         Search for song lyrics with Japanese transcriptions to create Anki
         cards.

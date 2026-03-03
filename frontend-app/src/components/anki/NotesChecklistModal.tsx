@@ -58,7 +58,8 @@ export const NotesChecklistModal = ({
   isDownloading = false,
   isAdding = false,
 }: NotesChecklistModalProps) => {
-  const { ankiConnectEnabled, selectedDeck, isMobile } = useAnkiConnectContext()
+  const { ankiConnectEnabled, selectedDeck, isAnkiConnectSupported } =
+    useAnkiConnectContext()
   const selectionKey = notesData
     ? `${notesData.deckName}-${notesData.notes.length}`
     : 'empty'
@@ -73,7 +74,7 @@ export const NotesChecklistModal = ({
       isAdding={isAdding}
       ankiConnectEnabled={ankiConnectEnabled}
       selectedDeck={selectedDeck}
-      isMobile={isMobile}
+      isAnkiConnectSupported={isAnkiConnectSupported}
       onDownload={onDownload}
       onAddToDeck={onAddToDeck}
       onClose={onClose}
@@ -84,7 +85,7 @@ export const NotesChecklistModal = ({
 type NotesChecklistContentProps = NotesChecklistModalProps & {
   ankiConnectEnabled: boolean
   selectedDeck: string
-  isMobile: boolean
+  isAnkiConnectSupported: boolean
 }
 
 const NotesChecklistContent = ({
@@ -98,7 +99,7 @@ const NotesChecklistContent = ({
   isAdding = false,
   ankiConnectEnabled,
   selectedDeck,
-  isMobile,
+  isAnkiConnectSupported,
 }: NotesChecklistContentProps) => {
   const [selected, setSelected] = useState<Set<number>>(() =>
     notesData ? new Set(notesData.notes.map((_, index) => index)) : new Set()
@@ -128,7 +129,9 @@ const NotesChecklistContent = ({
   const handleSelectAll = useCallback(() => {
     if (!notesData) return
     setSelected(
-      allSelected ? new Set() : new Set(notesData.notes.map((_, index) => index))
+      allSelected
+        ? new Set()
+        : new Set(notesData.notes.map((_, index) => index))
     )
   }, [notesData, allSelected])
 
@@ -225,7 +228,7 @@ const NotesChecklistContent = ({
         >
           {isDownloading ? 'Preparing…' : 'Download'}
         </Button>
-        {!isMobile && (
+        {isAnkiConnectSupported && (
           <Tooltip
             title={
               !ankiConnectEnabled

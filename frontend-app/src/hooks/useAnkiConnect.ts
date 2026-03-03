@@ -62,8 +62,9 @@ const getFieldsForNoteFromConfig = (
 
   return Object.fromEntries(
     fieldNames.map((canonicalFieldName) => {
-      const possibleKeys =
-        FIELD_ALIASES[canonicalFieldName] ?? [canonicalFieldName]
+      const possibleKeys = FIELD_ALIASES[canonicalFieldName] ?? [
+        canonicalFieldName,
+      ]
       const firstNonEmptyValue = possibleKeys
         .map((aliasKey) => noteFields[aliasKey])
         .find(

@@ -22,6 +22,10 @@ const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
   paddingBottom: theme.spacing(2),
 }))
 
+const AccordionTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: theme.typography.fontWeightMedium,
+}))
+
 const PANEL_1 = 'search'
 const PANEL_2 = 'paste'
 
@@ -43,7 +47,7 @@ export const MobileMainView = () => {
         disableGutters
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography fontWeight="medium">Search</Typography>
+          <AccordionTitle>Search</AccordionTitle>
         </AccordionSummary>
         <StyledAccordionDetails>
           <SearchView hideTitle />
@@ -55,7 +59,7 @@ export const MobileMainView = () => {
         disableGutters
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography fontWeight="medium">Paste lyrics</Typography>
+          <AccordionTitle>Paste lyrics</AccordionTitle>
         </AccordionSummary>
         <StyledAccordionDetails>
           <FreeTextView hideTitle />
