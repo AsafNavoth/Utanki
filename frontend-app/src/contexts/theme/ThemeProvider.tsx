@@ -22,6 +22,20 @@ const getIsMobileFromUserAgent = (): boolean =>
 
 const THEME_MODE_STORAGE_KEY = 'utanki-theme-mode'
 
+const FONT_FAMILY_HEADING =
+  '"Montserrat", "Zen Kaku Gothic New", sans-serif'
+const FONT_FAMILY_BODY = '"Inter", "Noto Sans JP", sans-serif'
+const TYPOGRAPHY_HEADING_VARIANT_NAMES = [
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'subtitle1',
+  'subtitle2',
+] as const
+
 const getThemeModeFromString = (inputString: string): ThemeMode | null => {
   switch (inputString) {
     case LIGHT_THEME_STRING:
@@ -52,6 +66,15 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const theme = useMemo(
     () =>
       createTheme({
+        typography: {
+          fontFamily: FONT_FAMILY_BODY,
+          ...Object.fromEntries(
+            TYPOGRAPHY_HEADING_VARIANT_NAMES.map((variantName) => [
+              variantName,
+              { fontFamily: FONT_FAMILY_HEADING },
+            ])
+          ),
+        },
         palette: {
           mode,
           primary: { main: '#14b8a6' },
