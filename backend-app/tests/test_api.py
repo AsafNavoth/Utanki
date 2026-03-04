@@ -5,29 +5,31 @@ from config import LRCLIB_BASE_URL
 from lyrics_tokenizer import (
     JamdictNotAvailableError,
     get_sentence_for_word,
-    remove_english_letters,
+    remove_non_japanese_chars,
     _should_keep_token,
 )
 
 
 def test_should_keep_token_filters_single_hiragana_and_punctuation():
-    assert _should_keep_token('桜') is True
-    assert _should_keep_token('花') is True
-    assert _should_keep_token('咲い') is True
-    assert _should_keep_token('の') is False
-    assert _should_keep_token('が') is False
-    assert _should_keep_token('た') is False
-    assert _should_keep_token('、') is False
-    assert _should_keep_token('。') is False
-    assert _should_keep_token('') is False
+    assert _should_keep_token('桜')
+    assert _should_keep_token('花')
+    assert _should_keep_token('咲い')
+    assert not _should_keep_token('の')
+    assert not _should_keep_token('が')
+    assert not _should_keep_token('た')
+    assert not _should_keep_token('、')
+    assert not _should_keep_token('。')
+    assert not _should_keep_token('')
 
 
-def test_remove_english_letters_strips_ascii_letters():
-    assert remove_english_letters('Hello 世界') == '世界'
-    assert remove_english_letters('桜の花が咲いた') == '桜の花が咲いた'
-    assert remove_english_letters('I love 日本') == '日本'
-    assert remove_english_letters('abc') == ''
-    assert remove_english_letters('   spaces   between   ') == ''
+def test_remove_non_japanese_chars_strips_non_japanese():
+    assert remove_non_japanese_chars('Hello 世界') == '世界'
+    assert remove_non_japanese_chars('桜の花が咲いた') == '桜の花が咲いた'
+    assert remove_non_japanese_chars('I love 日本') == '日本'
+    assert remove_non_japanese_chars('abc') == ''
+    assert remove_non_japanese_chars('   spaces   between   ') == ''
+    assert remove_non_japanese_chars('Привет 世界') == '世界'
+    assert remove_non_japanese_chars('café 桜') == '桜'
 
 
 def test_search_returns_400_when_no_query_params(client):

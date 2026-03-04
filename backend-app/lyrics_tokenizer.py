@@ -111,11 +111,22 @@ def extract_lyrics_text(lyrics_data: dict) -> str:
     return re.sub(r'\[\d{1,2}:\d{2}\.\d{2}\]\s*', '', synced)
 
 
-def remove_english_letters(text: str) -> str:
-    """Remove all ASCII letters (a-z, A-Z) from text and normalize whitespace."""
-    text = re.sub(r'[a-zA-Z]', '', text)
+# Unicode ranges for Japanese: Hiragana, Katakana, Kanji (CJK), CJK punctuation, whitespace
+_JAPANESE_CHAR_PATTERN = re.compile(
+    r'[\u3040-\u309F'  # Hiragana
+    r'\u30A0-\u30FF'  # Katakana
+    r'\u4E00-\u9FFF'  # CJK Unified Ideographs
+    r'\u3400-\u4DBF'  # CJK Unified Ideographs Extension A
+    r'\u3000-\u303F'  # CJK Symbols and Punctuation (、。etc.)
+    r'\s]'  # Whitespace
+)
 
-    return re.sub(r'\s+', ' ', text).strip()
+
+def remove_non_japanese_chars(text: str) -> str:
+    """Remove all non-Japanese characters and normalize whitespace.
+    Keeps Hiragana, Katakana, Kanji, CJK punctuation, and whitespace."""
+    cleaned = ''.join(c for c in text if _JAPANESE_CHAR_PATTERN.match(c))
+    return re.sub(r'\s+', ' ', cleaned).strip()
 
 
 MAX_SENTENCE_LEN = 100
@@ -203,7 +214,7 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
     if not text or not text.strip():
         return []
 
-    text = remove_english_letters(text)
+    text = remove_non_japanese_chars(text)
 
     if not text:
         return []
