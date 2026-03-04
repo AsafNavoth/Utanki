@@ -15,12 +15,8 @@ def _get_request_context():
 
     if request.method in ('POST', 'PUT', 'PATCH') and request.is_json:
         request_body = request.get_json(silent=True)
-
         if isinstance(request_body, dict):
             request_context['body_keys'] = list(request_body.keys())
-
-            if 'trackName' in request_body:
-                request_context['track'] = request_body.get('trackName', 'Unknown')
 
     return request_context
 
@@ -43,13 +39,10 @@ def _get_response_info(return_value):
             if 'error' in response_json:
                 response_info['error'] = response_json['error']
 
-            if 'notes' in response_json:
-                response_info['notes_count'] = len(response_json.get('notes', []))
-
     except Exception:
         pass
 
-    if 'notes_count' not in response_info and hasattr(response_obj, 'get_data'):
+    if hasattr(response_obj, 'get_data'):
         response_bytes = response_obj.get_data()
 
         if response_bytes:
@@ -63,14 +56,11 @@ def _get_result_summary(result):
     if result is None:
         return None
 
-    if isinstance(result, list):
+    if isinstance(result, (list, str, bytes)):
         return f"len={len(result)}"
 
     if isinstance(result, dict):
         return f"keys={len(result)}"
-
-    if isinstance(result, (str, bytes)):
-        return f"len={len(result)}"
 
     return None
 
@@ -129,8 +119,6 @@ def log_route(route_func):
             )
         else:
             success_extras = []
-            if 'notes_count' in response_info:
-                success_extras.append(f"notes={response_info['notes_count']}")
             if 'size' in response_info:
                 success_extras.append(f"size={response_info['size']}")
             success_log_suffix = (

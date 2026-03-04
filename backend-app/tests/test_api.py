@@ -1,3 +1,4 @@
+import pytest
 import requests_mock
 from unittest.mock import patch
 
@@ -9,41 +10,57 @@ from lyrics_vocabulary_extractor import (
 )
 
 
-def test_should_keep_token_filters_single_hiragana_and_punctuation():
+def test_should_keep_token_filters_single_hiragana_katakana_and_punctuation():
     assert _should_keep_token('桜')
     assert _should_keep_token('花')
     assert _should_keep_token('咲い')
     assert not _should_keep_token('の')
     assert not _should_keep_token('が')
-    assert not _should_keep_token('た')
+    assert not _should_keep_token('ア')
     assert not _should_keep_token('、')
     assert not _should_keep_token('。')
     assert not _should_keep_token('')
 
 
-def test_remove_non_japanese_chars_strips_non_japanese():
-    assert remove_non_japanese_chars('Hello 世界') == '世界'
-    assert remove_non_japanese_chars('桜の花が咲いた') == '桜の花が咲いた'
-    assert remove_non_japanese_chars('I love 日本') == '日本'
-    assert remove_non_japanese_chars('abc') == ''
-    assert remove_non_japanese_chars('   spaces   between   ') == ''
-    assert remove_non_japanese_chars('Привет 世界') == '世界'
-    assert remove_non_japanese_chars('café 桜') == '桜'
+@pytest.mark.parametrize(
+    'text,expected',
+    [
+        ('Hello 世界', '世界'),
+        ('桜の花が咲いた', '桜の花が咲いた'),
+        ('I love 日本', '日本'),
+        ('abc', ''),
+        ('   spaces   between   ', ''),
+        ('Привет 世界', '世界'),
+        ('café 桜', '桜'),
+    ],
+    ids=[
+        'english_and_japanese',
+        'japanese_only',
+        'mixed',
+        'no_japanese',
+        'spaces',
+        'cyrillic_and_japanese',
+        'accented_and_japanese',
+    ],
+)
+def test_remove_non_japanese_chars_strips_non_japanese(text, expected):
+    assert remove_non_japanese_chars(text) == expected
 
 
-def test_search_returns_400_when_no_query_params(client):
+def test_search_returns_400_when_no_params(client):
     response = client.get('/api/search')
-
     assert response.status_code == 400
     assert response.get_json() == {
         'error': 'At least one of q or track_name is required'
     }
 
 
-def test_search_returns_400_when_empty_query(client):
+def test_search_returns_400_when_empty_q(client):
     response = client.get('/api/search', query_string={'q': ''})
-
     assert response.status_code == 400
+    assert response.get_json() == {
+        'error': 'At least one of q or track_name is required'
+    }
 
 
 def test_search_returns_results_when_q_provided(client):
@@ -167,23 +184,27 @@ def test_export_anki_deck_returns_apkg_from_notes(client):
 
 
 def test_export_anki_deck_returns_400_when_no_notes(client):
-    payload = {'deckName': 'Test', 'modelName': 'Utanki - Lyrics Vocabulary', 'notes': []}
     response = client.post(
         '/api/lyrics/anki/deck',
-        json=payload,
+        json={
+            'deckName': 'Test',
+            'modelName': 'Utanki - Lyrics Vocabulary',
+            'notes': [],
+        },
         headers={'Content-Type': 'application/json'},
     )
     assert response.status_code == 400
 
 
 def test_export_anki_deck_returns_400_when_no_deck_name(client):
-    payload = {
-        'modelName': 'Utanki - Lyrics Vocabulary',
-        'notes': [{'fields': {'Word': '花', 'Sentence': '', 'Word Meaning': 'flower'}}],
-    }
     response = client.post(
         '/api/lyrics/anki/deck',
-        json=payload,
+        json={
+            'modelName': 'Utanki - Lyrics Vocabulary',
+            'notes': [
+                {'fields': {'Word': '花', 'Sentence': '', 'Word Meaning': 'flower'}}
+            ],
+        },
         headers={'Content-Type': 'application/json'},
     )
     assert response.status_code == 400
@@ -236,38 +257,41 @@ TEST_LYRICS = '''おかわりするわ 飲み終わるまでにきてね
 いつまでも おりこうさんだね バカバカしいな'''
 
 
-def test_get_sentence_for_word_finds_lines_with_surface_forms():
+@pytest.mark.parametrize(
+    'word,surface_forms,expected',
+    [
+        ('飲む', ['飲み'], 'おかわりするわ <b>飲み</b>終わるまでにきてね'),
+        ('おかしい', ['おかしい'], '私の何かが<b>おかしい</b>の'),
+        ('泳ぐ', ['泳いで'], 'みんなが知らない海<b>泳いで</b>'),
+        ('光る', ['光らない'], '耳のそば 連絡ないまま <b>光らない</b>な'),
+    ],
+    ids=['飲む', 'おかしい', '泳ぐ', '光る'],
+)
+def test_get_sentence_for_word_finds_lines_with_surface_forms(
+    word, surface_forms, expected
+):
     """Sentence extraction finds lines using surface forms (handles conjugation)."""
-    # 飲む has surface 飲み in "飲み終わるまでにきてね"
-    assert (
-        get_sentence_for_word('飲む', TEST_LYRICS, ['飲み'])
-        == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
-    )
-    # おかしい has surface おかしい in "私の何かがおかしいの"
-    assert (
-        get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい'])
-        == '私の何かが<b>おかしい</b>の'
-    )
-    # 泳ぐ has surface 泳いで in "みんなが知らない海泳いで"
-    assert (
-        get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで'])
-        == 'みんなが知らない海<b>泳いで</b>'
-    )
-    # 光る has surface 光らない in "光らないな"
-    assert (
-        get_sentence_for_word('光る', TEST_LYRICS, ['光らない'])
-        == '耳のそば 連絡ないまま <b>光らない</b>な'
-    )
+    assert get_sentence_for_word(word, TEST_LYRICS, surface_forms) == expected
 
 
 def test_get_sentence_for_word_truncates_long_paragraphs():
     """Long paragraphs are truncated to a window around the word."""
-    long_para = 'あ' * 50 + '花' + 'い' * 50  # 101 chars, 花 at position 50
-    result = get_sentence_for_word('花', long_para)
-    assert '花' in result
-    assert '<b>花</b>' in result
-    assert len(result) <= 115  # 100 + ellipsis + <b></b> tags
-    assert result.startswith('…') or result.endswith('…')
+    # Match near start: truncate end only (suffix ellipsis)
+    lyrics = 'あ' * 50 + '花' + 'い' * 50
+    assert (
+        get_sentence_for_word('花', lyrics) == 'あ' * 50 + '<b>花</b>' + 'い' * 49 + '…'
+    )
+    # Match near end: truncate start only (prefix ellipsis)
+    lyrics = 'あ' * 90 + '花' + 'い' * 10
+    assert (
+        get_sentence_for_word('花', lyrics) == '…' + 'あ' * 89 + '<b>花</b>' + 'い' * 10
+    )
+    # Match in middle: truncate both (prefix and suffix ellipsis)
+    lyrics = 'あ' * 100 + '花' + 'い' * 100
+    assert (
+        get_sentence_for_word('花', lyrics)
+        == '…' + 'あ' * 50 + '<b>花</b>' + 'い' * 49 + '…'
+    )
 
 
 @patch('lyrics_anki_builder.extract_vocabulary_from_lyrics')

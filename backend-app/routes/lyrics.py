@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, Response, jsonify, request
 import requests
 from requests.exceptions import HTTPError, RequestException
@@ -13,6 +15,7 @@ from config import LRCLIB_BASE_URL, MAX_LYRICS_CHARS
 from decorators import log_route
 from lyrics_vocabulary_extractor import JamdictNotAvailableError, extract_lyrics_text
 
+logger = logging.getLogger(__name__)
 lyrics_bp = Blueprint('lyrics', __name__)
 
 
@@ -116,6 +119,7 @@ def export_anki_notes():
 
     try:
         result = build_anki_notes_json(lyrics_data)
+        logger.info("export_anki_notes: notes=%d", len(result.get('notes', [])))
         return jsonify(result)
     except (JamdictNotAvailableError, NoVocabularyCardsError, NoDefinitionsError) as e:
         if error_response := _handle_anki_errors(e):

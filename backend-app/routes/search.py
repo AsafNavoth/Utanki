@@ -11,8 +11,9 @@ search_bp = Blueprint('search', __name__)
 @search_bp.route('/search')
 @log_route
 def search():
-    """Search for lyrics in Lrclib. Accepts query params (q, track_name, etc).
-    Requires at least one of q or track_name. Returns matching tracks."""
+    """Search for lyrics in Lrclib. Accepts query params (q, track_name, artist_name, album_name).
+    Requires at least one of q or track_name (Lrclib returns empty for artist_name or album_name alone).
+    Returns matching tracks."""
     search_params = {
         param_name: param_value
         for param_name, param_value in request.args.items()

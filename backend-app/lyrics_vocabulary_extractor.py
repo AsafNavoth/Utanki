@@ -228,11 +228,15 @@ def _lookup_words_in_jamdict(
 def _count_successful_jamdict_lookups(vocabulary_lookups: list) -> int:
     """Return number of vocabulary lookups with a successful jamdict result."""
     return sum(
-        1 for _word, lookup_result, _surfaces in vocabulary_lookups if lookup_result.get('found')
+        1
+        for _word, lookup_result, _surfaces in vocabulary_lookups
+        if lookup_result.get('found')
     )
 
 
-def _extract_vocabulary_from_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
+def _extract_vocabulary_from_lyrics_impl(
+    text: str,
+) -> list[tuple[str, dict, list[str]]]:
     """Internal implementation of extract_vocabulary_from_lyrics."""
     if not text or not text.strip():
         return []
@@ -285,7 +289,9 @@ def _extract_vocabulary_from_lyrics_impl(text: str) -> list[tuple[str, dict, lis
         jam = _get_jamdict()
 
         if jam is not None:
-            vocabulary_lookups = _lookup_words_in_jamdict(jam, unique_words, dict_to_surfaces)
+            vocabulary_lookups = _lookup_words_in_jamdict(
+                jam, unique_words, dict_to_surfaces
+            )
             found_count = _count_successful_jamdict_lookups(vocabulary_lookups)
     return vocabulary_lookups
 

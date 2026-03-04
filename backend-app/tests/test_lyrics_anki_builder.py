@@ -53,8 +53,8 @@ def test_format_jamdict_result_limits_to_five_definitions():
     assert 'def7' not in formatted
 
 
-def test_format_jamdict_result_returns_no_definition_found_for_empty():
-    """Empty result produces 'No definition found'."""
+def test_format_jamdict_result_returns_no_definition_found_for_empty_lookup():
+    """Jamdict lookup result with no entries, names, or chars produces 'No definition found'."""
     result = {'entries': [], 'names': [], 'chars': []}
     formatted = _format_jamdict_result(result)
     assert 'No definition found' in formatted
