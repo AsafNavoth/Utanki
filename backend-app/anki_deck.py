@@ -13,7 +13,7 @@ from lyrics_tokenizer import (
     tokenize_lyrics,
 )
 
-# Stable IDs for the model and deck (generated once, hardcoded)
+# Stable IDs for the model and deck
 MODEL_ID = 1607392319
 DECK_ID = 2059400111
 
@@ -45,73 +45,73 @@ class NoDefinitionsError(Exception):
         super().__init__(message)
 
 
+def _extract_kanji_kana_texts(entry: dict) -> tuple[list[str], list[str]]:
+    """Extract kanji and kana text lists from a JMdict/JMnedict entry."""
+    kanji_texts = [
+        item.get("text", "") for item in entry.get("kanji", []) if item.get("text")
+    ]
+    kana_texts = [
+        item.get("text", "") for item in entry.get("kana", []) if item.get("text")
+    ]
+    return kanji_texts, kana_texts
+
+
+def _format_headword_jmdict(kanji_texts: list[str], kana_texts: list[str]) -> str:
+    """Format headword for JMdict: kanji, or kanji (kana), or kana-only."""
+    headword = " ".join(kanji_texts) if kanji_texts else " ".join(kana_texts)
+    if kana_texts and kanji_texts and kana_texts != kanji_texts:
+        headword = f"{' '.join(kanji_texts)} ({' '.join(kana_texts)})"
+    elif kana_texts and not kanji_texts:
+        headword = " ".join(kana_texts)
+    return headword
+
+
+def _format_headword_jmnedict(kanji_texts: list[str], kana_texts: list[str]) -> str:
+    """Format headword for JMnedict: kanji or kana form."""
+    return " ".join(kanji_texts or kana_texts)
+
+
+def _extract_glosses(entry: dict, english_only: bool = True) -> list[str]:
+    """Extract gloss strings from entry senses, up to MAX_DEFINITIONS."""
+    glosses = []
+    for sense in entry.get("senses", []):
+        for gloss in sense.get("SenseGloss", []):
+            text = gloss.get("text", "")
+            if text and (
+                not english_only or not gloss.get("lang") or gloss.get("lang") == "eng"
+            ):
+                glosses.append(html.escape(text))
+                if len(glosses) >= MAX_DEFINITIONS:
+                    break
+        if len(glosses) >= MAX_DEFINITIONS:
+            break
+    return glosses
+
+
+def _format_entry_div(headword: str, glosses: list[str], suffix: str = "") -> str:
+    """Format headword and glosses as HTML div. suffix e.g. ' (name)' for JMnedict."""
+    return f'<div class="entry"><b>{html.escape(headword)}</b>{suffix}<br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>'
+
+
 def _format_jamdict_result(result: dict) -> str:
     """Format jamdict result as HTML for Anki card back."""
     parts = []
 
     # Word entries (JMdict)
     for entry in result.get("entries", []):
-        kanji_texts = [
-            kanji_item.get("text", "")
-            for kanji_item in entry.get("kanji", [])
-            if kanji_item.get("text")
-        ]
-        kana_texts = [
-            kana_item.get("text", "")
-            for kana_item in entry.get("kana", [])
-            if kana_item.get("text")
-        ]
-        headword = " ".join(kanji_texts) if kanji_texts else " ".join(kana_texts)
-        if kana_texts and kanji_texts and kana_texts != kanji_texts:
-            headword = f"{' '.join(kanji_texts)} ({' '.join(kana_texts)})"
-        elif kana_texts and not kanji_texts:
-            headword = " ".join(kana_texts)
-
-        glosses = []
-        for sense in entry.get("senses", []):
-            for gloss in sense.get("SenseGloss", []):
-                text = gloss.get("text", "")
-                if text and (not gloss.get("lang") or gloss.get("lang") == "eng"):
-                    glosses.append(html.escape(text))
-                    if len(glosses) >= MAX_DEFINITIONS:
-                        break
-            if len(glosses) >= MAX_DEFINITIONS:
-                break
-
+        kanji_texts, kana_texts = _extract_kanji_kana_texts(entry)
+        headword = _format_headword_jmdict(kanji_texts, kana_texts)
+        glosses = _extract_glosses(entry, english_only=True)
         if headword or glosses:
-            parts.append(
-                f'<div class="entry"><b>{html.escape(headword)}</b><br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>'
-            )
+            parts.append(_format_entry_div(headword, glosses))
 
     # Named entities (JMnedict)
     for entry in result.get("names", []):
-        kanji_texts = [
-            kanji_item.get("text", "")
-            for kanji_item in entry.get("kanji", [])
-            if kanji_item.get("text")
-        ]
-        kana_texts = [
-            kana_item.get("text", "")
-            for kana_item in entry.get("kana", [])
-            if kana_item.get("text")
-        ]
-        headword = " ".join(kanji_texts or kana_texts)
-
-        glosses = []
-        for sense in entry.get("senses", []):
-            for gloss in sense.get("SenseGloss", []):
-                text = gloss.get("text", "")
-                if text:
-                    glosses.append(html.escape(text))
-                    if len(glosses) >= MAX_DEFINITIONS:
-                        break
-            if len(glosses) >= MAX_DEFINITIONS:
-                break
-
+        kanji_texts, kana_texts = _extract_kanji_kana_texts(entry)
+        headword = _format_headword_jmnedict(kanji_texts, kana_texts)
+        glosses = _extract_glosses(entry, english_only=False)
         if headword or glosses:
-            parts.append(
-                f'<div class="entry"><b>{html.escape(headword)}</b> (name)<br>{"; ".join(glosses[:MAX_DEFINITIONS])}</div>'
-            )
+            parts.append(_format_entry_div(headword, glosses, suffix=" (name)"))
 
     # Kanji characters (KANJIDIC)
     for char in result.get("chars", []):
@@ -151,7 +151,7 @@ BACK_TEMPLATE = """<div lang="ja">
 
 
 def get_anki_model_config() -> dict:
-    """Return model config for AnkiConnect (single source of truth for frontend)."""
+    """Return model config for AnkiConnect."""
     return {
         "modelName": ANKI_MODEL_NAME,
         "fields": [FIELD_WORD, FIELD_SENTENCE, FIELD_WORD_MEANING],
@@ -166,7 +166,7 @@ _anki_model_cache: genanki.Model | None = None
 
 
 def _get_anki_model() -> genanki.Model:
-    """Return the note model for lyrics vocabulary cards (cached)."""
+    """Return the note model for lyrics vocabulary cards."""
     global _anki_model_cache
     if _anki_model_cache is None:
         _anki_model_cache = genanki.Model(
@@ -197,41 +197,6 @@ def _build_notes_from_tokenized(
             continue
         notes.append((html.escape(word), sentence, definition_html))
     return notes
-
-
-def build_anki_deck(
-    tokenized_lyrics: list[tuple[str, str, dict]],
-    deck_name: str | None = None,
-) -> bytes:
-    """Build an Anki deck from tokenized lyrics.
-    Each item is (word, sentence, result). Returns .apkg file bytes."""
-    deck_name = deck_name or ANKI_MODEL_NAME
-    if not tokenized_lyrics:
-        raise NoVocabularyCardsError()
-
-    notes = _build_notes_from_tokenized(tokenized_lyrics)
-    if not notes:
-        raise NoDefinitionsError()
-
-    model = _get_anki_model()
-    deck = genanki.Deck(DECK_ID, deck_name)
-    for word, sentence, definition_html in notes:
-        note = genanki.Note(
-            model=model,
-            fields=[word, sentence, definition_html],
-        )
-        deck.add_note(note)
-
-    package = genanki.Package(deck)
-    with tempfile.NamedTemporaryFile(suffix=".apkg", delete=False) as tmp:
-        tmp_path = tmp.name
-    try:
-        package.write_to_file(tmp_path)
-        with open(tmp_path, "rb") as deck_file:
-            apkg_bytes = deck_file.read()
-        return apkg_bytes
-    finally:
-        os.unlink(tmp_path)
 
 
 def _prepare_lyrics_data(

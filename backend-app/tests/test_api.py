@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 from config import LRCLIB_BASE_URL
 from lyrics_tokenizer import (
-    JamdictNotAvailableError,
     get_sentence_for_word,
     remove_non_japanese_chars,
     _should_keep_token,
@@ -241,15 +240,23 @@ def test_get_sentence_for_word_finds_lines_with_surface_forms():
     """Sentence extraction finds lines using surface forms (handles conjugation)."""
     # 飲む has surface 飲み in "飲み終わるまでにきてね"
     assert (
-        get_sentence_for_word('飲む', TEST_LYRICS, ['飲み']) == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
+        get_sentence_for_word('飲む', TEST_LYRICS, ['飲み'])
+        == 'おかわりするわ <b>飲み</b>終わるまでにきてね'
     )
     # おかしい has surface おかしい in "私の何かがおかしいの"
-    assert get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい']) == '私の何かが<b>おかしい</b>の'
+    assert (
+        get_sentence_for_word('おかしい', TEST_LYRICS, ['おかしい'])
+        == '私の何かが<b>おかしい</b>の'
+    )
     # 泳ぐ has surface 泳いで in "みんなが知らない海泳いで"
-    assert get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで']) == 'みんなが知らない海<b>泳いで</b>'
+    assert (
+        get_sentence_for_word('泳ぐ', TEST_LYRICS, ['泳いで'])
+        == 'みんなが知らない海<b>泳いで</b>'
+    )
     # 光る has surface 光らない in "光らないな"
     assert (
-        get_sentence_for_word('光る', TEST_LYRICS, ['光らない']) == '耳のそば 連絡ないまま <b>光らない</b>な'
+        get_sentence_for_word('光る', TEST_LYRICS, ['光らない'])
+        == '耳のそば 連絡ないまま <b>光らない</b>な'
     )
 
 

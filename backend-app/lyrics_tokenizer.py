@@ -17,11 +17,9 @@ class JamdictNotAvailableError(Exception):
     """Raised when jamdict database cannot be loaded."""
 
 
+# Module-level cache for the Sudachi tokenizer.
+# _get_tokenizer() creates it on first call and stores it here for reuse.
 _tokenizer = None
-
-# Use normalized_form() for modern forms (e.g. 信じる); use dictionary_form() for classical.
-# For hiragana-only words we use dictionary_form to avoid adding kanji not in the text.
-USE_NORMALIZED_FORM = True
 
 # Thread-local storage for Jamdict. Jamdict uses puchikarui, which uses SQLite.
 # SQLite connections must only be used in the thread that created them. Flask runs
@@ -96,16 +94,11 @@ def extract_lyrics_text(lyrics_data: dict) -> str:
     """Extract plain text from lyrics data (plainLyrics or syncedLyrics)."""
     if not isinstance(lyrics_data, dict):
         return ''
-    plain = (
-        lyrics_data.get('plainLyrics')
-        or lyrics_data.get('plain')
-        or lyrics_data.get('lyrics')
-        or ''
-    )
+    plain = lyrics_data.get('plainLyrics')
 
     if isinstance(plain, str) and plain.strip():
         return plain
-    synced = lyrics_data.get('syncedLyrics') or lyrics_data.get('synced')
+    synced = lyrics_data.get('syncedLyrics')
 
     if isinstance(synced, list):
         # Array format: [{text: "...", startTime: 123}, ...]
@@ -147,8 +140,8 @@ def _truncate_around_match(line: str, match: str) -> str:
     if len(line) <= MAX_SENTENCE_LEN:
         return line
 
-    idx = line.find(match)
-    match_pos = max(0, idx)
+    index = line.find(match)
+    match_pos = max(0, index)
 
     start = max(0, min(match_pos - MAX_SENTENCE_LEN // 2, len(line) - MAX_SENTENCE_LEN))
     end = start + MAX_SENTENCE_LEN
@@ -165,9 +158,9 @@ def get_sentence_for_word(
     word: str, lyrics_text: str, surface_forms: list[str] | None = None
 ) -> str:
     """Return the first line/phrase from lyrics_text that contains the word.
-    Uses surface_forms for matching when provided (handles Japanese verb conjugation).
-    If the line exceeds MAX_SENTENCE_LEN, returns a truncated substring centered on the word.
-    The matched word is wrapped in <b> tags for bold display in Anki."""
+    Uses surface_forms for matching when provided.If the line exceeds MAX_SENTENCE_LEN,
+    returns a truncated substring centered on the word. The matched word is
+    wrapped in <b> tags for bold display in Anki."""
     if not lyrics_text:
         return ''
     # Prefer newline-separated lines; fall back to space-separated phrases (cleaned text)
@@ -223,6 +216,22 @@ def _should_keep_token(token: str) -> bool:
     return True
 
 
+def _lookup_words_in_jamdict(
+    jam, unique_words: list[str], dict_to_surfaces: dict
+) -> list:
+    """Return list of (word, lookup_result, surface_forms) for each word."""
+    return [
+        (word, _lookup_word(jam, word), dict_to_surfaces[word]) for word in unique_words
+    ]
+
+
+def _count_successful_jamdict_lookups(tokenized: list) -> int:
+    """Return number of tokenized items with a successful jamdict lookup."""
+    return sum(
+        1 for _word, lookup_result, _surfaces in tokenized if lookup_result.get('found')
+    )
+
+
 def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
     """Internal implementation of tokenize_lyrics."""
     if not text or not text.strip():
@@ -240,12 +249,12 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
     dict_to_surfaces: dict[str, list[str]] = {}
     for morpheme in morphemes:
         surface_form = morpheme.surface().strip()
-        # Use normalized_form for kanji words (modern 信じる); dictionary_form for hiragana-only
-        # to avoid adding kanji that wasn't in the text (e.g. わたし stays as dictionary form).
+        # normalized_form for kanji words; dictionary_form for hiragana-only to avoid adding
+        # kanji that wasn't in the text.
         surface_has_kanji = _contains_kanji(surface_form)
         dict_form = (
             morpheme.normalized_form()
-            if (USE_NORMALIZED_FORM and surface_has_kanji)
+            if surface_has_kanji
             else morpheme.dictionary_form()
         )
         if (
@@ -258,19 +267,15 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
 
     if jam is None and unique_words:
         raise JamdictNotAvailableError(
-            'Jamdict database is not available. Ensure jamdict.db is in backend-app/data/ '
+            'Jamdict database is not available. Ensure jamdict.db is in /data/ '
             'or set JAMDICT_DB_PATH environment variable.'
         )
 
     if jam is None:
         return []
 
-    tokenized = [
-        (word, _lookup_word(jam, word), dict_to_surfaces[word]) for word in unique_words
-    ]
-    found_count = sum(
-        1 for _word, lookup_result, _surfaces in tokenized if lookup_result.get('found')
-    )
+    tokenized = _lookup_words_in_jamdict(jam, unique_words, dict_to_surfaces)
+    found_count = _count_successful_jamdict_lookups(tokenized)
 
     # If all lookups returned empty, jamdict may be corrupted. Retry with a fresh instance.
     if found_count == 0 and len(tokenized) > 0:
@@ -280,15 +285,8 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
         jam = _get_jamdict()
 
         if jam is not None:
-            tokenized = [
-                (word, _lookup_word(jam, word), dict_to_surfaces[word])
-                for word in unique_words
-            ]
-            found_count = sum(
-                1
-                for _word, lookup_result, _surfaces in tokenized
-                if lookup_result.get('found')
-            )
+            tokenized = _lookup_words_in_jamdict(jam, unique_words, dict_to_surfaces)
+            found_count = _count_successful_jamdict_lookups(tokenized)
     return tokenized
 
 
