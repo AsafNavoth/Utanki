@@ -18,6 +18,11 @@ class JamdictNotAvailableError(Exception):
 
 
 _tokenizer = None
+
+# Use normalized_form() for modern forms (e.g. 信じる); use dictionary_form() for classical.
+# For hiragana-only words we use dictionary_form to avoid adding kanji not in the text.
+USE_NORMALIZED_FORM = True
+
 # Thread-local storage for Jamdict. Jamdict uses puchikarui, which uses SQLite.
 # SQLite connections must only be used in the thread that created them. Flask runs
 # each request in its own thread, so sharing a single Jamdict instance across
@@ -181,6 +186,11 @@ def get_sentence_for_word(
     return ''
 
 
+def _contains_kanji(s: str) -> bool:
+    """Return True if string contains any CJK ideograph (kanji)."""
+    return any('\u4e00' <= c <= '\u9fff' for c in s)
+
+
 def _should_keep_token(token: str) -> bool:
     """Filter out single hiragana, single katakana, and punctuation."""
     if not token:
@@ -226,7 +236,14 @@ def _tokenize_lyrics_impl(text: str) -> list[tuple[str, dict, list[str]]]:
     dict_to_surfaces: dict[str, list[str]] = {}
     for m in morphemes:
         surf = m.surface().strip()
-        dform = m.dictionary_form()
+        # Use normalized_form for kanji words (modern 信じる); dictionary_form for hiragana-only
+        # to avoid adding kanji that wasn't in the text (e.g. わたし stays as dictionary form).
+        surf_has_kanji = _contains_kanji(surf)
+        dform = (
+            m.normalized_form()
+            if (USE_NORMALIZED_FORM and surf_has_kanji)
+            else m.dictionary_form()
+        )
         if surf and _should_keep_token(surf) and _should_keep_token(dform):
             dict_to_surfaces.setdefault(dform, []).append(surf)
     unique_words = list(dict_to_surfaces.keys())
