@@ -1,26 +1,17 @@
 {
-  "manifest_version": 3,
-  "name": "Utanki AnkiConnect",
-  "version": "1.0.0",
-  "description": "Required for AnkiConnect integration. Proxies requests from Utanki to localhost.",
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.utanki.app/*",
-        "https://utanki.app/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*",
-        "http://*/*",
-        "https://*/*"
-      ],
-      "js": ["content.js"],
-      "run_at": "document_start"
-    }
-  ],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "host_permissions": [
-    "http://localhost:8765/"
-  ]
+    "manifest_version": 3,
+    "name": "Utanki AnkiConnect",
+    "version": "1.0.0",
+    "description": "Required for AnkiConnect integration. Proxies requests from Utanki to localhost.",
+    "content_scripts": [
+        {
+            "matches": ["https://www.utanki.app/*", "https://utanki.app/*"],
+            "js": ["content.js"],
+            "run_at": "document_start"
+        }
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": ["http://localhost:8765/"]
 }
